@@ -1,26 +1,45 @@
 @import "tailwindcss";
 
+/*
+  Amritara Rituals — Soft & Mystical theme
+  Palette: dusty lavender, soft rose, muted gold, moonlit cream.
+*/
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f7f3fa; /* moonlit cream-lavender */
+  --surface: #fffdfe; /* card surface */
+  --foreground: #3a3142; /* deep muted plum (body text) */
+  --muted: #7a6f86; /* secondary text */
+  --lavender: #9b86c4; /* primary */
+  --lavender-deep: #6f5a96;
+  --rose: #d6a9bd; /* soft rose accent */
+  --gold: #c4a366; /* muted gold accent */
+  --border: #e7ddee;
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface: var(--surface);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-muted: var(--muted);
+  --color-lavender: var(--lavender);
+  --color-lavender-deep: var(--lavender-deep);
+  --color-rose: var(--rose);
+  --color-gold: var(--gold);
+  --color-border: var(--border);
+  --font-display: var(--font-display);
+  --font-sans: var(--font-body);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Soft dreamy gradient used behind the hero */
+.aura {
+  background:
+    radial-gradient(60% 55% at 20% 15%, rgba(155, 134, 196, 0.28), transparent 70%),
+    radial-gradient(55% 50% at 85% 25%, rgba(214, 169, 189, 0.30), transparent 70%),
+    radial-gradient(70% 60% at 50% 100%, rgba(196, 163, 102, 0.18), transparent 70%);
 }
