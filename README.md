@@ -1,1 +1,1 @@
-# amritara-rituals
+# amritara-rituals - initial phase
