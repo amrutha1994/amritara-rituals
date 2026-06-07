@@ -2,18 +2,24 @@
 
 /*
   Amritara Rituals — Soft & Mystical theme
-  Palette: dusty lavender, soft rose, muted gold, moonlit cream.
+  Primary: #90568D (orchid plum, drawn from the logo's lotus petals)
+  Aesthetic: light, airy, lavender-cream with muted gold accents.
 */
 :root {
-  --background: #f7f3fa; /* moonlit cream-lavender */
-  --surface: #fffdfe; /* card surface */
-  --foreground: #3a3142; /* deep muted plum (body text) */
-  --muted: #7a6f86; /* secondary text */
-  --lavender: #9b86c4; /* primary */
-  --lavender-deep: #6f5a96;
+  --background: #faf7fb; /* moonlit cream-lavender */
+  --surface: #ffffff; /* card / header surface */
+  --foreground: #382a38; /* deep plum (body text) */
+  --muted: #8a7d8a; /* secondary text */
+
+  --primary: #90568d; /* brand orchid plum */
+  --primary-deep: #6e4069; /* hover / headings */
+  --primary-soft: #f1e8f1; /* tinted fills, chips */
+
   --rose: #d6a9bd; /* soft rose accent */
-  --gold: #c4a366; /* muted gold accent */
-  --border: #e7ddee;
+  --gold: #c4a366; /* muted gold accent (logo lettering) */
+  --gold-antique: #b8923e; /* deeper antique gold for accents */
+  --gold-light: #e3c478; /* light gilt highlight */
+  --border: #ece2ec; /* hairline borders */
 }
 
 @theme inline {
@@ -21,11 +27,17 @@
   --color-surface: var(--surface);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
-  --color-lavender: var(--lavender);
-  --color-lavender-deep: var(--lavender-deep);
+
+  --color-primary: var(--primary);
+  --color-primary-deep: var(--primary-deep);
+  --color-primary-soft: var(--primary-soft);
+
   --color-rose: var(--rose);
   --color-gold: var(--gold);
+  --color-gold-antique: var(--gold-antique);
+  --color-gold-light: var(--gold-light);
   --color-border: var(--border);
+
   --font-display: var(--font-display);
   --font-sans: var(--font-body);
 }
@@ -36,10 +48,47 @@ body {
   font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
 }
 
+/* Aesthetic header: warm cream-to-white sheen, frosted */
+.header-sheen {
+  background:
+    linear-gradient(180deg, rgba(255, 252, 247, 0.92) 0%, rgba(255, 255, 255, 0.86) 100%);
+}
+
+/* Thin antique-gold gilt line used as a divider/accent */
+.gold-rule {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--gold-light) 25%,
+    var(--gold-antique) 50%,
+    var(--gold-light) 75%,
+    transparent 100%
+  );
+}
+
+/* Animated gold underline for nav links */
+.nav-link {
+  position: relative;
+}
+.nav-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -4px;
+  height: 1.5px;
+  width: 0;
+  background: linear-gradient(90deg, var(--gold-antique), var(--gold-light));
+  transition: width 0.25s ease;
+}
+.nav-link:hover::after {
+  width: 100%;
+}
+
 /* Soft dreamy gradient used behind the hero */
 .aura {
   background:
-    radial-gradient(60% 55% at 20% 15%, rgba(155, 134, 196, 0.28), transparent 70%),
-    radial-gradient(55% 50% at 85% 25%, rgba(214, 169, 189, 0.30), transparent 70%),
-    radial-gradient(70% 60% at 50% 100%, rgba(196, 163, 102, 0.18), transparent 70%);
+    radial-gradient(60% 55% at 18% 12%, rgba(144, 86, 141, 0.18), transparent 70%),
+    radial-gradient(55% 50% at 85% 20%, rgba(214, 169, 189, 0.22), transparent 70%),
+    radial-gradient(70% 60% at 50% 110%, rgba(196, 163, 102, 0.14), transparent 70%);
 }
