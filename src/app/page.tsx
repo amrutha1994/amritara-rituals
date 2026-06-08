@@ -1,12 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
+import CollectionsSection from "@/components/collections-section";
 
 export default function Home() {
   return (
     <main className="flex flex-1 flex-col">
       {/* Hero banner */}
       <section className="relative w-full overflow-hidden">
-        <div className="relative h-[58vh] min-h-[360px] w-full sm:h-[66vh] lg:h-[78vh]">
+        <div className="relative h-[42vh] min-h-[300px] w-full sm:h-[48vh] lg:h-[56vh]">
           <Image
             src="/hero-banner.jpg"
             alt="Crystal bracelets, gemstones and incense arranged on a soft linen surface"
@@ -27,14 +28,21 @@ export default function Home() {
                 Handcrafted gemstone rituals
               </span>
 
-              <h1 className="mt-6 font-display text-4xl font-medium italic leading-tight text-primary-deep sm:text-5xl lg:text-6xl">
-                Align your energy and soul
+              <h1 className="mt-6 font-display font-normal not-italic leading-tight text-primary-deep">
+                <span className="block whitespace-nowrap text-[clamp(1.75rem,7vw,3rem)] leading-none">
+                  Amritara Rituals
+                </span>
+                <span className="mt-2 block text-base text-gold-antique sm:text-lg lg:text-xl">
+                  Align your energy &amp; soul
+                </span>
               </h1>
 
               <p className="mt-5 max-w-sm text-base leading-8 text-foreground/80 sm:text-lg">
-                Gemstone bracelets crafted as wearable rituals — each stone
-                chosen for its energy, each piece a small daily return to
-                yourself.
+                Wearable rituals, carved in stone.
+              </p>
+              <p className="mt-3 max-w-sm text-base leading-8 text-foreground/80 sm:text-lg">
+                Every stone holds an energy. Every bracelet, a reminder to come
+                home to yourself.
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -56,41 +64,56 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Antique-gold divider */}
-      <div className="gold-rule" />
-
-      {/* Brand story */}
-      <section className="bg-background px-6 py-20 text-center">
-        <div className="mx-auto flex max-w-xl flex-col items-center gap-5">
-          <p className="text-base leading-8 text-muted sm:text-lg">
-            Amritara Rituals crafts gemstone bracelets as quiet reminders to
-            return to yourself — each stone chosen for its energy, each piece a
-            small daily ritual. We blend the timeless symbolism of the lotus
-            with the living presence of natural crystals.
-          </p>
-          <p className="text-base leading-8 text-foreground/80 sm:text-lg">
-            Our first collection is being prepared with care. Something
-            beautiful is on its way.
-          </p>
-        </div>
-      </section>
+      {/* Product collection */}
+      <CollectionsSection />
 
       {/* Antique-gold divider between sections */}
       <div className="gold-rule" />
 
-      {/* Placeholder intro band */}
+      {/* Our story */}
       <section id="story" className="bg-surface px-6 py-20">
-        <div className="mx-auto max-w-3xl text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gold-antique">
-            The ritual
-          </p>
-          <h2 className="mt-4 font-display text-3xl font-medium text-foreground sm:text-4xl">
-            Jewellery with intention
-          </h2>
-          <p className="mt-6 text-base leading-8 text-muted sm:text-lg">
-            Every Amritara piece begins with a feeling — calm, courage, clarity,
-            protection — and the gemstone that carries it. More of our story,
-            collections, and rituals are coming soon to this space.
+        <div className="mx-auto max-w-2xl">
+          <div className="text-center">
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gold-antique">
+              Our story
+            </p>
+            <h2 className="mt-4 font-display text-3xl font-medium text-foreground sm:text-4xl">
+              Made by hand, with intention
+            </h2>
+          </div>
+
+          <div className="mt-8 flex flex-col gap-6 text-base leading-8 text-muted sm:text-lg">
+            <p>
+              Amritara began on my own wrist, during a season when I was trying
+              to find my way back to myself. A single strand of stones became
+              the thing I reached for on the hard days. That small, steadying
+              ritual slowly helped me heal, and in time I knew I wanted to make
+              the same quiet comfort for others, one bracelet at a time.
+            </p>
+            <p>
+              I make every piece by hand, with the utmost attention. Each stone
+              is chosen for the energy it carries, whether that is calm, courage,
+              clarity or protection. I customise every bracelet around the
+              intention you&apos;re reaching for, so the power of each crystal is
+              matched to you rather than picked at random.
+            </p>
+            <p>
+              Amritara Rituals crafts gemstone bracelets as quiet reminders to
+              return to yourself. Each stone is chosen for its energy, and every
+              piece becomes a small daily ritual. I blend the timeless symbolism
+              of the lotus with the living presence of natural crystals, so what
+              you wear feels less like jewellery and more like a moment of
+              stillness you can carry with you.
+            </p>
+            <p>
+              Every order is cleansed and set with care before it reaches you,
+              because to me these aren&apos;t products. They&apos;re little
+              companions made to grow alongside the person wearing them.
+            </p>
+          </div>
+
+          <p className="mt-10 text-center font-display text-xl italic text-primary-deep">
+            With love, Amrutha
           </p>
         </div>
       </section>
