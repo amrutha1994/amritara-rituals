@@ -7,21 +7,26 @@ export default function Home() {
     <main className="flex flex-1 flex-col">
       {/* Hero banner */}
       <section className="relative w-full overflow-hidden">
-        <div className="relative h-[42vh] min-h-[300px] w-full sm:h-[48vh] lg:h-[56vh]">
+        <div className="relative w-full">
           <Image
             src="/hero-banner.jpg"
             alt="Crystal bracelets, gemstones and incense arranged on a soft linen surface"
             fill
             priority
             sizes="100vw"
-            className="object-cover object-right"
+            className="object-cover object-[35%_center] lg:object-right"
           />
 
-          {/* Scrim so the left-side text stays legible */}
-          <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/45 to-transparent" />
+          {/* Scrim so the left-side text stays legible. Heavier on small
+              screens, where the text sits over busier parts of the image. */}
+          <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/70 to-background/30 sm:from-background/90 sm:via-background/45 sm:to-transparent" />
 
-          {/* Overlay content */}
-          <div className="relative mx-auto flex h-full max-w-6xl items-center px-6 sm:px-8">
+          {/* Overlay content drives the banner's height: padding gives the
+              minimum, and min-h guarantees a generous band on larger screens.
+              Using min-h (not a fixed h) means the content can grow taller than
+              the band when needed, so nothing gets clipped at any width. The
+              fill image tracks this wrapper's height. */}
+          <div className="relative mx-auto flex max-w-6xl items-center px-6 py-14 sm:min-h-[48vh] sm:px-8 sm:py-12 lg:min-h-[56vh] lg:py-16">
             <div className="max-w-md text-left">
               <span className="inline-flex items-center gap-2 rounded-full border border-gold/40 bg-surface/70 px-4 py-1.5 text-xs uppercase tracking-[0.25em] text-gold-antique backdrop-blur-sm">
                 <span className="h-1.5 w-1.5 rounded-full bg-gold-antique" />
