@@ -1,3 +1,22 @@
+/** Bracelet size identifiers (wrist-circumference based). */
+export type BraceletSizeId = "S" | "M" | "L";
+
+export interface BraceletSize {
+  id: BraceletSizeId;
+  /** Human-friendly name, e.g. "Medium" */
+  label: string;
+  /** Wrist circumference the size is intended for, e.g. "15–16 cm" */
+  wrist: string;
+}
+
+// All bracelets are offered in the same three wrist-based sizes for now.
+// (Most beaded styles have a little give, so the ranges overlap slightly.)
+export const BRACELET_SIZES: BraceletSize[] = [
+  { id: "S", label: "Small", wrist: "14–15 cm" },
+  { id: "M", label: "Medium", wrist: "15–16 cm" },
+  { id: "L", label: "Large", wrist: "16–17 cm" },
+];
+
 export interface Product {
   /** Stable unique identifier */
   id: string;
