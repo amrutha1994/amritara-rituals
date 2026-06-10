@@ -42,7 +42,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {/* Toasts render above everything. On small screens (hamburger header)
           they sit top-centre; from md up — where the full header bar shows —
           they move to the right, below the header, so they don't overlap it. */}
-      <div className="pointer-events-none fixed inset-x-0 top-4 z-[70] flex flex-col items-center gap-2 px-4 md:inset-x-auto md:left-auto md:right-6 md:top-24 md:items-end md:px-0">
+      <div className="pointer-events-none fixed inset-x-0 top-4 z-[90] flex flex-col items-center gap-2 px-4 md:inset-x-auto md:left-auto md:right-6 md:top-24 md:items-end md:px-0">
         {toasts.map((t) => (
           <div
             key={t.id}

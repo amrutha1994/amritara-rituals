@@ -39,7 +39,7 @@ export default function SelectionBar() {
         <div className="mb-3 max-h-[50vh] overflow-y-auto rounded-2xl border border-border bg-surface p-4 shadow-2xl">
           <div className="flex items-center justify-between">
             <p className="font-display text-lg font-medium text-foreground">
-              Your selection
+              Your bag
             </p>
             <button
               type="button"
@@ -118,9 +118,9 @@ export default function SelectionBar() {
 
           {IS_WHATSAPP_PLACEHOLDER && (
             <p className="mt-3 text-xs leading-5 text-muted">
-              Ordering opens a pre-filled WhatsApp message listing your
-              selection. The business number is a placeholder until WhatsApp
-              Business is live.
+              Ordering opens a pre-filled WhatsApp message listing your bag.
+              The business number is a placeholder until WhatsApp Business is
+              live.
             </p>
           )}
         </div>
