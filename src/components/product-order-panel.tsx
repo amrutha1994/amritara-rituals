@@ -125,25 +125,25 @@ export default function ProductOrderPanel({ product }: { product: Product }) {
             onClick={handleAdd}
             className="rounded-full border border-border bg-surface px-7 py-3 text-center text-sm font-medium text-primary-deep transition-colors hover:border-primary"
           >
-            Add to selection
+            Add to bag
           </button>
         ) : (
           <div className="flex items-center justify-between gap-3 rounded-full border border-primary bg-primary-soft px-3 py-2">
             <button
               type="button"
               onClick={handleDecrement}
-              aria-label="Remove one from selection"
+              aria-label="Remove one from your bag"
               className="flex h-9 w-9 items-center justify-center rounded-full bg-surface text-lg text-primary-deep shadow-sm transition-colors hover:bg-primary hover:text-white"
             >
               −
             </button>
             <span className="text-sm font-medium text-primary-deep">
-              {qty} in your selection
+              {qty} in your bag
             </span>
             <button
               type="button"
               onClick={handleAdd}
-              aria-label="Add one to selection"
+              aria-label="Add one to your bag"
               className="flex h-9 w-9 items-center justify-center rounded-full bg-surface text-lg text-primary-deep shadow-sm transition-colors hover:bg-primary hover:text-white"
             >
               +

@@ -5,6 +5,7 @@ import SiteHeader from "@/components/site-header";
 import SiteFooter from "@/components/site-footer";
 import { SelectionProvider } from "@/components/selection-provider";
 import { ToastProvider } from "@/components/toast-provider";
+import { ProductSheetProvider } from "@/components/product-sheet-provider";
 import SelectionBar from "@/components/selection-bar";
 
 // Elegant serif for the wordmark & headings — echoes the logo's lettering.
@@ -39,10 +40,12 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <ToastProvider>
           <SelectionProvider>
-            <SiteHeader />
-            <div className="flex flex-1 flex-col">{children}</div>
-            <SiteFooter />
-            <SelectionBar />
+            <ProductSheetProvider>
+              <SiteHeader />
+              <div className="flex flex-1 flex-col">{children}</div>
+              <SiteFooter />
+              <SelectionBar />
+            </ProductSheetProvider>
           </SelectionProvider>
         </ToastProvider>
       </body>
