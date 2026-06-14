@@ -7,18 +7,26 @@ export interface BraceletSize {
   label: string;
   /** Wrist circumference the size is intended for, e.g. "15–16 cm" */
   wrist: string;
+  /** Typical fit guidance by gender, e.g. "Women" or "Men / Women" */
+  fit: string;
 }
 
 // All bracelets are offered in the same three wrist-based sizes for now.
 // (Most beaded styles have a little give, so the ranges overlap slightly.)
+// `fit` is a rough guide — women's wrists tend to run smaller than men's,
+// but wrist measurement is always the reliable way to choose.
 export const BRACELET_SIZES: BraceletSize[] = [
-  { id: "S", label: "Small", wrist: "14–15 cm" },
-  { id: "M", label: "Medium", wrist: "15–16 cm" },
-  { id: "L", label: "Large", wrist: "16–17 cm" },
+  { id: "S", label: "Small", wrist: "14–15 cm", fit: "Women" },
+  { id: "M", label: "Medium", wrist: "15–16 cm", fit: "Women / Men" },
+  { id: "L", label: "Large", wrist: "16–17 cm", fit: "Men" },
 ];
 
 export interface Product {
-  /** Stable unique identifier */
+  /**
+   * Stable tracking code / SKU. Stays fixed for the life of the product and
+   * is what appears in the WhatsApp order, so keep it short and unique
+   * (e.g. "AMR-AME-01"). Never reuse a retired code.
+   */
   id: string;
   /** Display name of the bracelet */
   name: string;
@@ -36,13 +44,60 @@ export interface Product {
   slug: string;
 }
 
-// Product photos live in /public/products. Rose Quartz has no matching photo yet,
-// so it falls back to the hero banner until a pink-stone image is added.
+// Product photos live in /public/products. Until a product has its own photo,
+// leave `image` out and it falls back to this placeholder.
 const PLACEHOLDER_IMAGE = "/hero-banner.jpg";
 
-export const products: Product[] = [
+/**
+ * What you fill in when adding a product. Only the essentials are required —
+ * `slug` is derived from the name and `image` falls back to the placeholder,
+ * so a new product is usually just six lines.
+ */
+type ProductInput = Omit<Product, "slug" | "image"> & {
+  slug?: string;
+  image?: string;
+};
+
+/** "Rose Quartz Heart Ritual" -> "rose-quartz-heart-ritual" */
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+/**
+ * Normalises the raw list into full Product objects and guards against the
+ * two mistakes that are easy to make by hand: a duplicate tracking code or a
+ * duplicate slug. Runs once at module load, so a clash fails the build rather
+ * than silently shipping — no runtime cost on the page.
+ */
+function defineProducts(items: ProductInput[]): Product[] {
+  const ids = new Set<string>();
+  const slugs = new Set<string>();
+
+  return items.map((item) => {
+    const slug = item.slug ?? slugify(item.name);
+
+    if (ids.has(item.id)) throw new Error(`Duplicate product id: "${item.id}"`);
+    if (slugs.has(slug)) throw new Error(`Duplicate product slug: "${slug}"`);
+    ids.add(item.id);
+    slugs.add(slug);
+
+    return { ...item, slug, image: item.image ?? PLACEHOLDER_IMAGE };
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// To add a product: copy one block, give it a new unique `id`, fill the
+// fields, and drop a photo in /public/products. `slug` and `image` are
+// optional. That's it — the grid, the product page, and the WhatsApp order
+// all pick it up automatically.
+// ─────────────────────────────────────────────────────────────────────────
+export const products: Product[] = defineProducts([
   {
-    id: "amethyst-01",
+    id: "AMR-AME-01",
     name: "Amethyst Calm Ritual",
     stone: "Amethyst",
     price: 2499,
@@ -50,10 +105,9 @@ export const products: Product[] = [
     description:
       "A soothing band of deep violet amethyst, long cherished as the stone of serenity. Worn close to the pulse, it is intended to ease an overactive mind, deepen rest, and create space for intuition to surface.",
     image: "/products/amethyst.jpg",
-    slug: "amethyst-calm-ritual",
   },
   {
-    id: "rose-quartz-01",
+    id: "AMR-ROS-01",
     name: "Rose Quartz Heart Ritual",
     stone: "Rose Quartz",
     price: 1999,
@@ -61,10 +115,9 @@ export const products: Product[] = [
     description:
       "Blush-pink rose quartz beads, the timeless stone of compassion. This ritual is crafted to soften the heart, nurture self-kindness, and draw warmth into every relationship you carry.",
     image: "/products/citrine.jpeg",
-    slug: "rose-quartz-heart-ritual",
   },
   {
-    id: "citrine-01",
+    id: "AMR-CIT-01",
     name: "Citrine Abundance Ritual",
     stone: "Citrine",
     price: 2799,
@@ -72,10 +125,9 @@ export const products: Product[] = [
     description:
       "Sun-warmed citrine, known as the merchant's stone of prosperity. Worn through the day, it is meant to lift the spirit, fuel creative momentum, and welcome abundance in all its forms.",
     image: "/products/citrine.jpeg",
-    slug: "citrine-abundance-ritual",
   },
   {
-    id: "black-tourmaline-01",
+    id: "AMR-BTM-01",
     name: "Black Tourmaline Shield Ritual",
     stone: "Black Tourmaline",
     price: 2299,
@@ -83,10 +135,9 @@ export const products: Product[] = [
     description:
       "Deep, grounding black tourmaline — a protective anchor for body and spirit. This ritual is intended to steady the nerves, return you to the present, and form a quiet shield against draining energy.",
     image: "/products/tigereye.jpg",
-    slug: "black-tourmaline-shield-ritual",
   },
   {
-    id: "clear-quartz-01",
+    id: "AMR-CLQ-01",
     name: "Clear Quartz Clarity Ritual",
     stone: "Clear Quartz",
     price: 2199,
@@ -94,8 +145,7 @@ export const products: Product[] = [
     description:
       "Luminous clear quartz, revered as the master healer and amplifier. Worn with purpose, it is meant to sharpen focus, magnify your intentions, and bring lucid clarity to each new day.",
     image: "/products/jade.jpg",
-    slug: "clear-quartz-clarity-ritual",
   },
-];
+]);
 
 export default products;

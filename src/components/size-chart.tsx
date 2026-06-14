@@ -94,6 +94,7 @@ export default function SizeChart({ className }: { className?: string }) {
                 <tr className="border-b border-border text-xs uppercase tracking-[0.15em] text-muted">
                   <th className="pb-2 font-semibold">Size</th>
                   <th className="pb-2 font-semibold">Wrist</th>
+                  <th className="pb-2 font-semibold">Typically</th>
                 </tr>
               </thead>
               <tbody>
@@ -104,6 +105,7 @@ export default function SizeChart({ className }: { className?: string }) {
                       <span className="text-muted">({size.id})</span>
                     </td>
                     <td className="py-3 text-foreground/80">{size.wrist}</td>
+                    <td className="py-3 text-foreground/80">{size.fit}</td>
                   </tr>
                 ))}
               </tbody>
@@ -116,7 +118,9 @@ export default function SizeChart({ className }: { className?: string }) {
               <p className="mt-1">
                 Wrap a soft tape measure (or a strip of paper) snugly around
                 your wrist, just below the wrist bone. Note the measurement in
-                centimetres and match it to a size above. Between two sizes?
+                centimetres and match it to a size above. The “Typically”
+                column is just a guide — women’s wrists tend to run smaller than
+                men’s, but your measurement is what matters. Between two sizes?
                 Size up for a relaxed fit, down for a closer one.
               </p>
             </div>
