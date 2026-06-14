@@ -27,11 +27,6 @@ const Icon = {
       <path d="M13 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5" />
     </svg>
   ),
-  Rituals: (p: IconProps) => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className={p.className}>
-      <path d="M12 3v18M3 12h18M6 6l12 12M18 6 6 18" />
-    </svg>
-  ),
   Contact: (p: IconProps) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className={p.className}>
       <path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9l-4 4v-4H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" />
@@ -43,7 +38,6 @@ const NAV_LINKS = [
   { label: "Home", href: "/", icon: Icon.Home },
   { label: "Collections", href: "#collections", icon: Icon.Collections },
   { label: "Our Story", href: "#story", icon: Icon.Story },
-  { label: "Rituals", href: "#rituals", icon: Icon.Rituals },
   { label: "Contact", href: "#contact", icon: Icon.Contact },
 ] as const;
 

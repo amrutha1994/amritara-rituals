@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import CollectionsSection from "@/components/collections-section";
+import ContactSection from "@/components/contact-section";
 
 export default function Home() {
   return (
@@ -122,6 +123,12 @@ export default function Home() {
           </p>
         </div>
       </section>
+
+      {/* Antique-gold divider between sections */}
+      <div className="gold-rule" />
+
+      {/* Contact */}
+      <ContactSection />
     </main>
   );
 }

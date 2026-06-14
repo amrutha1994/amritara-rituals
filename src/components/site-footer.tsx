@@ -4,7 +4,6 @@ const FOOTER_NAV = [
   { label: "Home", href: "/" },
   { label: "Collections", href: "#collections" },
   { label: "Our Story", href: "#story" },
-  { label: "Rituals", href: "#rituals" },
   { label: "Contact", href: "#contact" },
 ] as const;
 
