@@ -1,9 +1,9 @@
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { products } from "@/data/products";
 import ProductOrderPanel from "@/components/product-order-panel";
+import ProductGallery from "@/components/product-gallery";
 
 const inr = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -51,20 +51,8 @@ export default async function ProductPage({
           </Link>
 
           <div className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-2 lg:gap-16">
-            {/* Image */}
-            <div className="relative aspect-square w-full overflow-hidden rounded-3xl border border-border bg-surface shadow-[0_18px_50px_-24px_rgba(144,86,141,0.5)]">
-              <Image
-                src={product.image}
-                alt={product.name}
-                fill
-                priority
-                sizes="(min-width: 1024px) 50vw, 100vw"
-                className="object-cover"
-              />
-              <span className="absolute left-4 top-4 rounded-full border border-gold/40 bg-surface/85 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.15em] text-gold-antique backdrop-blur-sm">
-                {product.stone}
-              </span>
-            </div>
+            {/* Image gallery */}
+            <ProductGallery product={product} />
 
             {/* Details */}
             <div className="flex flex-col">

@@ -38,8 +38,13 @@ export interface Product {
   shortIntention: string;
   /** Longer descriptive copy */
   description: string;
-  /** Path to the product image (under /public) */
+  /** Primary product image (under /public) — the first gallery image. */
   image: string;
+  /**
+   * All product photos for the detail-page gallery, in display order.
+   * Always has at least one entry (`image` is its first element).
+   */
+  images: string[];
   /** URL-friendly slug, e.g. for /collections/[slug] */
   slug: string;
 }
@@ -50,12 +55,17 @@ const PLACEHOLDER_IMAGE = "/hero-banner.jpg";
 
 /**
  * What you fill in when adding a product. Only the essentials are required —
- * `slug` is derived from the name and `image` falls back to the placeholder,
+ * `slug` is derived from the name and the images fall back to the placeholder,
  * so a new product is usually just six lines.
+ *
+ * Provide either a single `image` or an `images` array (or both). The first
+ * gallery image is whatever you list first — `images[0]`, or `image` when no
+ * array is given.
  */
-type ProductInput = Omit<Product, "slug" | "image"> & {
+type ProductInput = Omit<Product, "slug" | "image" | "images"> & {
   slug?: string;
   image?: string;
+  images?: string[];
 };
 
 /** "Rose Quartz Heart Ritual" -> "rose-quartz-heart-ritual" */
@@ -85,7 +95,14 @@ function defineProducts(items: ProductInput[]): Product[] {
     ids.add(item.id);
     slugs.add(slug);
 
-    return { ...item, slug, image: item.image ?? PLACEHOLDER_IMAGE };
+    // Build the gallery from `images` (preferred) or the single `image`,
+    // falling back to the placeholder. `image` always mirrors images[0].
+    const images =
+      item.images?.length
+        ? item.images
+        : [item.image ?? PLACEHOLDER_IMAGE];
+
+    return { ...item, slug, image: images[0], images };
   });
 }
 
@@ -104,7 +121,7 @@ export const products: Product[] = defineProducts([
     shortIntention: "Quiet the mind and invite restful clarity.",
     description:
       "A soothing band of deep violet amethyst, long cherished as the stone of serenity. Worn close to the pulse, it is intended to ease an overactive mind, deepen rest, and create space for intuition to surface.",
-    image: "/products/amethyst.jpg",
+    images: ["/products/amethyst.jpg", "/products/jade.jpg", "/products/tigereye.jpg"],
   },
   {
     id: "AMR-ROS-01",
@@ -114,7 +131,7 @@ export const products: Product[] = defineProducts([
     shortIntention: "Open the heart to gentle, unconditional love.",
     description:
       "Blush-pink rose quartz beads, the timeless stone of compassion. This ritual is crafted to soften the heart, nurture self-kindness, and draw warmth into every relationship you carry.",
-    image: "/products/citrine.jpeg",
+    images: ["/products/citrine.jpeg", "/products/amethyst.jpg", "/products/jade.jpg"],
   },
   {
     id: "AMR-CIT-01",
@@ -124,7 +141,7 @@ export const products: Product[] = defineProducts([
     shortIntention: "Spark joy, confidence, and abundance.",
     description:
       "Sun-warmed citrine, known as the merchant's stone of prosperity. Worn through the day, it is meant to lift the spirit, fuel creative momentum, and welcome abundance in all its forms.",
-    image: "/products/citrine.jpeg",
+    images: ["/products/citrine.jpeg", "/products/tigereye.jpg", "/products/amethyst.jpg"],
   },
   {
     id: "AMR-BTM-01",
@@ -134,7 +151,7 @@ export const products: Product[] = defineProducts([
     shortIntention: "Ground your energy and shield from negativity.",
     description:
       "Deep, grounding black tourmaline — a protective anchor for body and spirit. This ritual is intended to steady the nerves, return you to the present, and form a quiet shield against draining energy.",
-    image: "/products/tigereye.jpg",
+    images: ["/products/tigereye.jpg", "/products/jade.jpg", "/products/citrine.jpeg"],
   },
   {
     id: "AMR-CLQ-01",
@@ -144,7 +161,7 @@ export const products: Product[] = defineProducts([
     shortIntention: "Amplify intention and clear the path ahead.",
     description:
       "Luminous clear quartz, revered as the master healer and amplifier. Worn with purpose, it is meant to sharpen focus, magnify your intentions, and bring lucid clarity to each new day.",
-    image: "/products/jade.jpg",
+    images: ["/products/jade.jpg", "/products/amethyst.jpg", "/products/tigereye.jpg"],
   },
 ]);
 

@@ -8,6 +8,8 @@ import {
 } from "@/data/products";
 import {
   buildProductOrderLink,
+  buildProductOrderText,
+  shareOrderWithImage,
   IS_WHATSAPP_PLACEHOLDER,
 } from "@/lib/whatsapp";
 import { useSelection } from "@/components/selection-provider";
@@ -30,10 +32,24 @@ export default function ProductOrderPanel({ product }: { product: Product }) {
 
   const qty = size ? qtyOf(product.id, size) : 0;
 
-  const handleOrder = (e: React.MouseEvent) => {
+  const [sharing, setSharing] = useState(false);
+
+  const handleOrder = async () => {
     if (!size) {
-      e.preventDefault();
       setError(true);
+      return;
+    }
+    if (sharing) return;
+    setSharing(true);
+    try {
+      await shareOrderWithImage({
+        text: buildProductOrderText(product, size),
+        imageUrl: product.image,
+        fallbackLink: buildProductOrderLink(product, size),
+        title: product.name,
+      });
+    } finally {
+      setSharing(false);
     }
   };
 
@@ -103,21 +119,20 @@ export default function ProductOrderPanel({ product }: { product: Product }) {
 
       {/* Actions */}
       <div className="mt-6 flex flex-col gap-3">
-        <a
-          href={size ? buildProductOrderLink(product, size) : "#"}
+        <button
+          type="button"
           onClick={handleOrder}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-disabled={!size}
+          disabled={sharing}
+          aria-disabled={!size || sharing}
           className={`flex items-center justify-center gap-2 rounded-full px-7 py-3.5 text-center text-sm font-medium text-white shadow-sm ring-1 ring-gold-light/30 transition-colors ${
-            size
+            size && !sharing
               ? "bg-primary hover:bg-primary-deep"
               : "cursor-not-allowed bg-primary/50"
           }`}
         >
           <WhatsAppIcon className="h-5 w-5" />
-          Order on WhatsApp
-        </a>
+          {sharing ? "Opening…" : "Order on WhatsApp"}
+        </button>
 
         {qty === 0 ? (
           <button
