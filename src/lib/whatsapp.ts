@@ -60,16 +60,73 @@ function lineText(line: OrderLine): string {
   return `${base} — ${inr.format(line.product.price)}`;
 }
 
-/** Deep link that opens WhatsApp pre-filled to order one product. */
-export function buildProductOrderLink(product: Product, size: BraceletSizeId): string {
-  const text = [
+/** The pre-filled message body for ordering one product (no link wrapper). */
+export function buildProductOrderText(product: Product, size: BraceletSizeId): string {
+  return [
     "Hi Amritara Rituals!",
     "I'd like to order this ritual:",
     `• ${lineText({ product, size, qty: 1 })}`,
     "",
     "Could you help me complete the order?",
   ].join("\n");
-  return waLink(text);
+}
+
+/** Deep link that opens WhatsApp pre-filled to order one product. */
+export function buildProductOrderLink(product: Product, size: BraceletSizeId): string {
+  return waLink(buildProductOrderText(product, size));
+}
+
+/**
+ * Try to share the order *with the product photo attached* via the native
+ * Web Share API, so the customer can pick WhatsApp from the share sheet and
+ * the actual image is sent (not just a link).
+ *
+ * A wa.me link can only carry text, so when the device/browser can't share a
+ * file (most desktops), we fall back to opening the pre-filled chat instead.
+ *
+ * @returns "shared" if the share sheet handled it, "fallback" if we opened the
+ *          wa.me link, or "cancelled" if the user dismissed the share sheet.
+ */
+export async function shareOrderWithImage(opts: {
+  text: string;
+  imageUrl: string;
+  /** wa.me link to use when file sharing isn't available. */
+  fallbackLink: string;
+  /** Title used by the share sheet / file name. */
+  title: string;
+}): Promise<"shared" | "fallback" | "cancelled"> {
+  const { text, imageUrl, fallbackLink, title } = opts;
+
+  const openFallback = (): "fallback" => {
+    window.open(fallbackLink, "_blank", "noopener,noreferrer");
+    return "fallback";
+  };
+
+  // No Web Share, or it can't carry files → just open the chat.
+  if (typeof navigator === "undefined" || !navigator.canShare) {
+    return openFallback();
+  }
+
+  try {
+    const res = await fetch(imageUrl);
+    if (!res.ok) return openFallback();
+    const blob = await res.blob();
+    const ext = (blob.type.split("/")[1] || "jpg").replace("jpeg", "jpg");
+    const file = new File([blob], `${title}.${ext}`, {
+      type: blob.type || "image/jpeg",
+    });
+
+    if (!navigator.canShare({ files: [file] })) return openFallback();
+
+    await navigator.share({ files: [file], text, title });
+    return "shared";
+  } catch (err) {
+    // User dismissed the share sheet — don't also open a chat behind it.
+    if (err instanceof DOMException && err.name === "AbortError") {
+      return "cancelled";
+    }
+    return openFallback();
+  }
 }
 
 /** Deep link that opens WhatsApp pre-filled to order a selection of products. */
