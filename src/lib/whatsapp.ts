@@ -60,79 +60,52 @@ function lineText(line: OrderLine): string {
   return `${base} — ${inr.format(line.product.price)}`;
 }
 
-/** The pre-filled message body for ordering one product (no link wrapper). */
-export function buildProductOrderText(product: Product, size: BraceletSizeId): string {
+/**
+ * The pre-filled message body for ordering one product (no link wrapper).
+ *
+ * Pass an absolute `imageUrl` to include a "Photo:" line — WhatsApp turns that
+ * link into a photo preview, which is the only way to get the product image
+ * into a chat opened by a wa.me link (links can't carry file attachments).
+ */
+export function buildProductOrderText(
+  product: Product,
+  size: BraceletSizeId,
+  imageUrl?: string,
+): string {
   return [
     "Hi Amritara Rituals!",
     "I'd like to order this ritual:",
     `• ${lineText({ product, size, qty: 1 })}`,
+    ...(imageUrl ? ["", `Photo: ${imageUrl}`] : []),
     "",
     "Could you help me complete the order?",
   ].join("\n");
 }
 
 /** Deep link that opens WhatsApp pre-filled to order one product. */
-export function buildProductOrderLink(product: Product, size: BraceletSizeId): string {
-  return waLink(buildProductOrderText(product, size));
+export function buildProductOrderLink(
+  product: Product,
+  size: BraceletSizeId,
+  imageUrl?: string,
+): string {
+  return waLink(buildProductOrderText(product, size, imageUrl));
 }
 
 /**
- * Try to share the order *with the product photo attached* via the native
- * Web Share API, so the customer can pick WhatsApp from the share sheet and
- * the actual image is sent (not just a link).
+ * Deep link that opens WhatsApp pre-filled to order a selection of products.
  *
- * A wa.me link can only carry text, so when the device/browser can't share a
- * file (most desktops), we fall back to opening the pre-filled chat instead.
- *
- * @returns "shared" if the share sheet handled it, "fallback" if we opened the
- *          wa.me link, or "cancelled" if the user dismissed the share sheet.
+ * Pass `origin` (e.g. window.location.origin) to append a "Photo:" link under
+ * each line so WhatsApp shows a preview of every product — links can't carry
+ * file attachments, so the URL preview is how the images reach the chat.
  */
-export async function shareOrderWithImage(opts: {
-  text: string;
-  imageUrl: string;
-  /** wa.me link to use when file sharing isn't available. */
-  fallbackLink: string;
-  /** Title used by the share sheet / file name. */
-  title: string;
-}): Promise<"shared" | "fallback" | "cancelled"> {
-  const { text, imageUrl, fallbackLink, title } = opts;
-
-  const openFallback = (): "fallback" => {
-    window.open(fallbackLink, "_blank", "noopener,noreferrer");
-    return "fallback";
-  };
-
-  // No Web Share, or it can't carry files → just open the chat.
-  if (typeof navigator === "undefined" || !navigator.canShare) {
-    return openFallback();
-  }
-
-  try {
-    const res = await fetch(imageUrl);
-    if (!res.ok) return openFallback();
-    const blob = await res.blob();
-    const ext = (blob.type.split("/")[1] || "jpg").replace("jpeg", "jpg");
-    const file = new File([blob], `${title}.${ext}`, {
-      type: blob.type || "image/jpeg",
-    });
-
-    if (!navigator.canShare({ files: [file] })) return openFallback();
-
-    await navigator.share({ files: [file], text, title });
-    return "shared";
-  } catch (err) {
-    // User dismissed the share sheet — don't also open a chat behind it.
-    if (err instanceof DOMException && err.name === "AbortError") {
-      return "cancelled";
-    }
-    return openFallback();
-  }
-}
-
-/** Deep link that opens WhatsApp pre-filled to order a selection of products. */
-export function buildSelectionOrderLink(lines: OrderLine[]): string {
+export function buildSelectionOrderLink(lines: OrderLine[], origin?: string): string {
   const total = lines.reduce((sum, l) => sum + l.product.price * l.qty, 0);
-  const body = lines.map((l, i) => `${i + 1}. ${lineText(l)}`).join("\n");
+  const body = lines
+    .map((l, i) => {
+      const line = `${i + 1}. ${lineText(l)}`;
+      return origin ? `${line}\n   Photo: ${origin}${l.product.image}` : line;
+    })
+    .join("\n");
   const text = [
     "Hi Amritara Rituals!",
     "I'd like to order these rituals:",
