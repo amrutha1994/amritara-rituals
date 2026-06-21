@@ -32,6 +32,13 @@ export default function SelectionBar() {
   const total = lines.reduce((sum, l) => sum + l.product.price * l.qty, 0);
   const noun = count === 1 ? "ritual" : "rituals";
 
+  // Build the order link on click so we can use the live origin for the photo
+  // preview links (avoids a hydration mismatch from reading window at render).
+  const handleOrder = () => {
+    const link = buildSelectionOrderLink(lines, window.location.origin);
+    window.open(link, "_blank", "noopener,noreferrer");
+  };
+
   return (
     <div className="fixed bottom-4 left-1/2 z-40 w-[min(92vw,34rem)] -translate-x-1/2">
       {/* Expandable list of selected items */}
@@ -153,14 +160,13 @@ export default function SelectionBar() {
           </svg>
         </button>
 
-        <a
-          href={buildSelectionOrderLink(lines)}
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          type="button"
+          onClick={handleOrder}
           className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-primary-deep transition-colors hover:bg-primary-soft"
         >
           Order on WhatsApp
-        </a>
+        </button>
       </div>
     </div>
   );
