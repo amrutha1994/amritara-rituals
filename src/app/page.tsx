@@ -73,6 +73,29 @@ export default function Home() {
       {/* Product collection */}
       <CollectionsSection />
 
+      {/* Customise your own — call to action */}
+      <section className="bg-background px-6 pb-20">
+        <div className="mx-auto max-w-4xl overflow-hidden rounded-3xl border border-gold/30 bg-surface p-8 text-center shadow-[0_20px_60px_-32px_rgba(144,86,141,0.5)] sm:p-12">
+          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gold-antique">
+            Make it yours
+          </p>
+          <h2 className="mt-4 font-display text-3xl font-medium text-foreground sm:text-4xl">
+            Customise your own bracelet
+          </h2>
+          <p className="mx-auto mt-4 max-w-xl text-base leading-8 text-muted">
+            Can&apos;t find your stone? Choose your bead size and combine the
+            crystals whose energy you&apos;re reaching for into a bracelet made
+            just for you.
+          </p>
+          <Link
+            href="/customise"
+            className="mt-8 inline-flex rounded-full bg-primary px-8 py-3 text-sm font-medium text-white shadow-sm ring-1 ring-gold-light/30 transition-colors hover:bg-primary-deep"
+          >
+            Start Customising
+          </Link>
+        </div>
+      </section>
+
       {/* Antique-gold divider between sections */}
       <div className="gold-rule" />
 

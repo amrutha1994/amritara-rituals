@@ -48,6 +48,19 @@ export interface OrderLine {
   qty: number;
 }
 
+/** A designed custom bracelet, used to compose an order message. */
+export interface CustomOrderLine {
+  beadSize: string;
+  /** Chosen stone names, in order. */
+  stoneNames: string[];
+  size: BraceletSizeId;
+  qty: number;
+  /** Price of one bracelet. */
+  unitPrice: number;
+  /** Optional absolute photo URLs for the chosen stones (for previews). */
+  imageUrls?: string[];
+}
+
 function lineText(line: OrderLine): string {
   // The [code] is the product's tracking id (SKU); it lets an order be matched
   // back to an exact product even if names or prices change later.
@@ -58,6 +71,25 @@ function lineText(line: OrderLine): string {
     )})`;
   }
   return `${base} — ${inr.format(line.product.price)}`;
+}
+
+/** A human-readable block describing one custom bracelet. */
+function customLineText(line: CustomOrderLine): string {
+  const stones = line.stoneNames.join(", ");
+  const priceTail =
+    line.qty > 1
+      ? `× ${line.qty} — ${inr.format(line.unitPrice)} each (${inr.format(
+          line.unitPrice * line.qty,
+        )})`
+      : `— ${inr.format(line.unitPrice)}`;
+  const rows = [
+    `Custom bracelet (${line.beadSize}) — Size ${line.size} ${priceTail}`,
+    `   Stones: ${stones}`,
+  ];
+  if (line.imageUrls?.length) {
+    rows.push(`   Photos: ${line.imageUrls.join(" | ")}`);
+  }
+  return rows.join("\n");
 }
 
 /**
@@ -91,25 +123,52 @@ export function buildProductOrderLink(
   return waLink(buildProductOrderText(product, size, imageUrl));
 }
 
+/** The pre-filled message body for ordering one custom bracelet. */
+export function buildCustomOrderText(line: CustomOrderLine): string {
+  return [
+    "Hi Amritara Rituals!",
+    "I'd like to order this custom bracelet:",
+    `• ${customLineText(line)}`,
+    "",
+    "Could you help me complete the order?",
+  ].join("\n");
+}
+
+/** Deep link that opens WhatsApp pre-filled to order one custom bracelet. */
+export function buildCustomOrderLink(line: CustomOrderLine): string {
+  return waLink(buildCustomOrderText(line));
+}
+
 /**
- * Deep link that opens WhatsApp pre-filled to order a selection of products.
+ * Deep link that opens WhatsApp pre-filled to order a whole bag — any mix of
+ * catalogue products and custom bracelets.
  *
- * Pass `origin` (e.g. window.location.origin) to append a "Photo:" link under
- * each line so WhatsApp shows a preview of every product — links can't carry
- * file attachments, so the URL preview is how the images reach the chat.
+ * Pass `origin` (e.g. window.location.origin) to append "Photo:" links so
+ * WhatsApp shows previews — links can't carry file attachments, so the URL
+ * preview is how the images reach the chat.
  */
-export function buildSelectionOrderLink(lines: OrderLine[], origin?: string): string {
-  const total = lines.reduce((sum, l) => sum + l.product.price * l.qty, 0);
-  const body = lines
-    .map((l, i) => {
-      const line = `${i + 1}. ${lineText(l)}`;
-      return origin ? `${line}\n   Photo: ${origin}${l.product.image}` : line;
-    })
-    .join("\n");
+export function buildSelectionOrderLink(
+  lines: OrderLine[],
+  customLines: CustomOrderLine[] = [],
+  origin?: string,
+): string {
+  const total =
+    lines.reduce((sum, l) => sum + l.product.price * l.qty, 0) +
+    customLines.reduce((sum, c) => sum + c.unitPrice * c.qty, 0);
+
+  // Continuous numbering across both kinds of line.
+  let n = 0;
+  const productRows = lines.map((l) => {
+    const row = `${++n}. ${lineText(l)}`;
+    return origin ? `${row}\n   Photo: ${origin}${l.product.image}` : row;
+  });
+  const customRows = customLines.map((c) => `${++n}. ${customLineText(c)}`);
+
   const text = [
     "Hi Amritara Rituals!",
     "I'd like to order these rituals:",
-    body,
+    ...productRows,
+    ...customRows,
     "",
     `Total: ${inr.format(total)}`,
     "Could you help me complete the order?",

@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { products } from "@/data/products";
+import { getStone } from "@/data/stones";
 import { useSelection } from "@/components/selection-provider";
 import {
   buildSelectionOrderLink,
   IS_WHATSAPP_PLACEHOLDER,
   type OrderLine,
+  type CustomOrderLine,
 } from "@/lib/whatsapp";
 
 const inr = new Intl.NumberFormat("en-IN", {
@@ -16,7 +18,18 @@ const inr = new Intl.NumberFormat("en-IN", {
 });
 
 export default function SelectionBar() {
-  const { items, add, decrement, remove, clear, count } = useSelection();
+  const {
+    items,
+    customItems,
+    add,
+    decrement,
+    remove,
+    incrementCustom,
+    decrementCustom,
+    removeCustom,
+    clear,
+    count,
+  } = useSelection();
   const [open, setOpen] = useState(false);
 
   if (count === 0) return null;
@@ -29,13 +42,37 @@ export default function SelectionBar() {
     })
     .filter((l): l is OrderLine => l !== null);
 
-  const total = lines.reduce((sum, l) => sum + l.product.price * l.qty, 0);
+  // Resolve custom configs into displayable lines (stone names + images).
+  const customLines = customItems.map((c) => {
+    const stones = c.stoneIds.map((id) => getStone(id)).filter((s) => s !== undefined);
+    return {
+      id: c.id,
+      beadSize: c.beadSize,
+      size: c.size,
+      qty: c.qty,
+      unitPrice: c.unitPrice,
+      stones,
+    };
+  });
+
+  const total =
+    lines.reduce((sum, l) => sum + l.product.price * l.qty, 0) +
+    customLines.reduce((sum, c) => sum + c.unitPrice * c.qty, 0);
   const noun = count === 1 ? "ritual" : "rituals";
 
   // Build the order link on click so we can use the live origin for the photo
   // preview links (avoids a hydration mismatch from reading window at render).
   const handleOrder = () => {
-    const link = buildSelectionOrderLink(lines, window.location.origin);
+    const origin = window.location.origin;
+    const customOrderLines: CustomOrderLine[] = customLines.map((c) => ({
+      beadSize: c.beadSize,
+      stoneNames: c.stones.map((s) => s.name),
+      size: c.size,
+      qty: c.qty,
+      unitPrice: c.unitPrice,
+      imageUrls: c.stones.map((s) => `${origin}${s.image}`),
+    }));
+    const link = buildSelectionOrderLink(lines, customOrderLines, origin);
     window.open(link, "_blank", "noopener,noreferrer");
   };
 
@@ -58,6 +95,69 @@ export default function SelectionBar() {
           </div>
 
           <ul className="mt-3 flex flex-col divide-y divide-border/70">
+            {/* Custom bracelets */}
+            {customLines.map((line) => (
+              <li
+                key={line.id}
+                className="flex items-center justify-between gap-3 py-2.5"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-foreground">
+                    Custom bracelet ({line.beadSize})
+                  </p>
+                  <p className="truncate text-xs text-muted">
+                    {line.stones.map((s) => s.name).join(", ") || "No stones"} ·
+                    Size {line.size} · {inr.format(line.unitPrice * line.qty)}
+                  </p>
+                </div>
+
+                <div className="flex shrink-0 items-center gap-2.5">
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => decrementCustom(line.id)}
+                      aria-label="Remove one custom bracelet"
+                      className="flex h-6 w-6 items-center justify-center rounded-full border border-border text-primary-deep transition-colors hover:border-primary hover:bg-primary-soft"
+                    >
+                      −
+                    </button>
+                    <span className="w-5 text-center text-sm font-semibold text-foreground">
+                      {line.qty}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => incrementCustom(line.id)}
+                      aria-label="Add one custom bracelet"
+                      className="flex h-6 w-6 items-center justify-center rounded-full border border-border text-primary-deep transition-colors hover:border-primary hover:bg-primary-soft"
+                    >
+                      +
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => removeCustom(line.id)}
+                    aria-label="Remove this custom bracelet entirely"
+                    className="flex h-7 w-7 items-center justify-center rounded-full text-muted transition-colors hover:bg-primary-soft hover:text-primary"
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                    >
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                      <line x1="6" y1="18" x2="18" y2="6" />
+                    </svg>
+                  </button>
+                </div>
+              </li>
+            ))}
+
+            {/* Catalogue rituals */}
             {lines.map((line) => (
               <li
                 key={`${line.product.id}-${line.size}`}

@@ -32,11 +32,18 @@ const Icon = {
       <path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9l-4 4v-4H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" />
     </svg>
   ),
+  Customise: (p: IconProps) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className={p.className}>
+      <path d="M12 3.5 13.6 8l4.5 1.6L13.6 11 12 15.5 10.4 11 5.9 9.6 10.4 8 12 3.5Z" />
+      <path d="M6 16.5 6.7 18.5 8.7 19.2 6.7 19.9 6 22 5.3 19.9 3.3 19.2 5.3 18.5 6 16.5Z" />
+    </svg>
+  ),
 } as const;
 
 const NAV_LINKS = [
   { label: "Home", href: "/", icon: Icon.Home },
   { label: "Collections", href: "#collections", icon: Icon.Collections },
+  { label: "Customise", href: "/customise", icon: Icon.Customise },
   { label: "Our Story", href: "#story", icon: Icon.Story },
   { label: "Contact", href: "#contact", icon: Icon.Contact },
 ] as const;
