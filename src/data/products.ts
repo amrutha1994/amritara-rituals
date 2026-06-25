@@ -32,7 +32,11 @@ export interface Product {
   name: string;
   /** Primary gemstone */
   stone: string;
-  /** Price in Indian Rupees (INR) */
+  /**
+   * Listed price in INR — what the storefront shows. This is the sheet's
+   * "Suggested Price" with shipping removed (`suggestedPrice - SHIPPING_FEE`);
+   * shipping is added back as a separate line at order time.
+   */
   price: number;
   /** One-line intention / purpose */
   shortIntention: string;
@@ -53,6 +57,19 @@ export interface Product {
 // leave `image` out and it falls back to this placeholder.
 const PLACEHOLDER_IMAGE = "/hero-banner.jpg";
 
+// The detail-page gallery shows a carousel + thumbnails once a product has more
+// than one photo. Until a product has its full set, we pad its gallery up to
+// this many slots (repeating the last image) so the gallery still appears.
+// Supply that many real photos via `images: [...]` and no padding happens.
+const GALLERY_SLOTS = 3;
+
+/**
+ * Flat shipping charge (INR), kept separate from the listed price and added as
+ * its own line at order time. The pricing sheet folds ₹70 shipping into each
+ * "Suggested Price", so we subtract it back out for the listed price.
+ */
+export const SHIPPING_FEE = 70;
+
 /**
  * What you fill in when adding a product. Only the essentials are required —
  * `slug` is derived from the name and the images fall back to the placeholder,
@@ -62,10 +79,15 @@ const PLACEHOLDER_IMAGE = "/hero-banner.jpg";
  * gallery image is whatever you list first — `images[0]`, or `image` when no
  * array is given.
  */
-type ProductInput = Omit<Product, "slug" | "image" | "images"> & {
+type ProductInput = Omit<Product, "slug" | "image" | "images" | "price"> & {
   slug?: string;
   image?: string;
   images?: string[];
+  /**
+   * The pricing sheet's "Suggested Price" (the final price including shipping).
+   * The listed `price` is derived as `suggestedPrice - SHIPPING_FEE`.
+   */
+  suggestedPrice: number;
 };
 
 /** "Rose Quartz Heart Ritual" -> "rose-quartz-heart-ritual" */
@@ -97,12 +119,28 @@ function defineProducts(items: ProductInput[]): Product[] {
 
     // Build the gallery from `images` (preferred) or the single `image`,
     // falling back to the placeholder. `image` always mirrors images[0].
-    const images =
+    const provided =
       item.images?.length
         ? item.images
         : [item.image ?? PLACEHOLDER_IMAGE];
 
-    return { ...item, slug, image: images[0], images };
+    // Pad short galleries up to GALLERY_SLOTS (repeating the last image) so the
+    // detail-page carousel still appears with placeholder views. Once a product
+    // supplies that many real photos, nothing is padded.
+    const images = [...provided];
+    while (images.length < GALLERY_SLOTS) {
+      images.push(provided[provided.length - 1]);
+    }
+
+    // Listed price = sheet's suggested price minus the separate shipping fee.
+    const { suggestedPrice, ...rest } = item;
+    return {
+      ...rest,
+      price: suggestedPrice - SHIPPING_FEE,
+      slug,
+      image: images[0],
+      images,
+    };
   });
 }
 
@@ -112,56 +150,234 @@ function defineProducts(items: ProductInput[]): Product[] {
 // optional. That's it — the grid, the product page, and the WhatsApp order
 // all pick it up automatically.
 // ─────────────────────────────────────────────────────────────────────────
+// `suggestedPrice` is the sheet's final price (incl. ₹70 shipping). The listed
+// price is derived as suggestedPrice - SHIPPING_FEE. Images are placeholders
+// for now — drop real photos in /public/products and add an `images: [...]`.
 export const products: Product[] = defineProducts([
+  // ── 6mm ──────────────────────────────────────────────────────────────
   {
-    id: "AMR-AME-01",
-    name: "Amethyst Calm Ritual",
-    stone: "Amethyst",
-    price: 2499,
-    shortIntention: "Quiet the mind and invite restful clarity.",
+    id: "AMT01",
+    name: "Matte Yellow Tiger Eye Bracelet (6mm)",
+    stone: "Tiger Eye",
+    images: [
+      "/products/images/6mm/matte-yellow-tiger-eye/matte-yellow-tiger-eye-6mm-3.jpg",
+      "/products/images/6mm/matte-yellow-tiger-eye/matte-yellow-tiger-eye-6mm-1.jpg",
+      "/products/images/6mm/matte-yellow-tiger-eye/matte-yellow-tiger-eye-6mm-2.jpg",
+    ],
+    suggestedPrice: 600,
+    shortIntention: "Confidence and steady courage.",
     description:
-      "A soothing band of deep violet amethyst, long cherished as the stone of serenity. Worn close to the pulse, it is intended to ease an overactive mind, deepen rest, and create space for intuition to surface.",
-    images: ["/products/amethyst.jpg", "/products/jade.jpg", "/products/tigereye.jpg"],
+      "Warm, matte yellow tiger eye — the stone of courage and grounded confidence, worn to steady the nerves and keep you focused on what matters.",
   },
   {
-    id: "AMR-ROS-01",
-    name: "Rose Quartz Heart Ritual",
-    stone: "Rose Quartz",
-    price: 1999,
-    shortIntention: "Open the heart to gentle, unconditional love.",
+    id: "AMT02",
+    name: "Moss Agate Bracelet (6mm)",
+    stone: "Moss Agate",
+    images: [
+      "/products/images/6mm/moss-agate/moss-agate-6mm-1.jpg",
+      "/products/images/6mm/moss-agate/moss-agate-6mm-2.jpg",
+      "/products/images/6mm/moss-agate/moss-agate-6mm-3.jpg",
+    ],
+    suggestedPrice: 550,
+    shortIntention: "Growth, renewal and abundance.",
     description:
-      "Blush-pink rose quartz beads, the timeless stone of compassion. This ritual is crafted to soften the heart, nurture self-kindness, and draw warmth into every relationship you carry.",
-    images: ["/products/citrine.jpeg", "/products/amethyst.jpg", "/products/jade.jpg"],
+      "Earthy green moss agate, long seen as the gardener's stone of growth and new beginnings — a quiet reminder that you are always becoming.",
   },
   {
-    id: "AMR-CIT-01",
-    name: "Citrine Abundance Ritual",
-    stone: "Citrine",
-    price: 2799,
-    shortIntention: "Spark joy, confidence, and abundance.",
+    id: "AMT03",
+    name: "Shattuckite Bracelet (6mm)",
+    stone: "Shattuckite",
+    images: [
+      "/products/images/6mm/shattuckite/shattuckite-1.jpg",
+      "/products/images/6mm/shattuckite/shattuckite-2.jpg",
+      "/products/images/6mm/shattuckite/shattuckite-3.jpg",
+      "/products/images/6mm/shattuckite/shattuckite-4.jpg",
+    ],
+    suggestedPrice: 650,
+    shortIntention: "Intuition and inner truth.",
     description:
-      "Sun-warmed citrine, known as the merchant's stone of prosperity. Worn through the day, it is meant to lift the spirit, fuel creative momentum, and welcome abundance in all its forms.",
-    images: ["/products/citrine.jpeg", "/products/tigereye.jpg", "/products/amethyst.jpg"],
+      "Deep blue shattuckite, a stone of intuition and honest expression, meant to help you speak and live your truth with clarity.",
   },
   {
-    id: "AMR-BTM-01",
-    name: "Black Tourmaline Shield Ritual",
+    id: "AMT04",
+    name: "Lava & Red Tiger Eye Bracelet (6mm)",
+    stone: "Lava · Red Tiger Eye",
+    images: [
+      "/products/images/6mm/lava-red-tiger-eye/lava-red-tiger-eye-1.jpg",
+      "/products/images/6mm/lava-red-tiger-eye/lava-red-tiger-eye-2.jpg",
+      "/products/images/6mm/lava-red-tiger-eye/lava-red-tiger-eye-3.jpg",
+    ],
+    suggestedPrice: 500,
+    shortIntention: "Grounded strength with fresh motivation.",
+    description:
+      "Porous black lava paired with fiery red tiger eye — grounding and drive in one strand, for steady footing and the push to begin.",
+  },
+  {
+    id: "AMT05",
+    name: "Red Tiger Eye Bracelet (6mm)",
+    stone: "Red Tiger Eye",
+    images: [
+      "/products/images/6mm/red-tiger-eye/red-tiger-eye-1.jpg",
+      "/products/images/6mm/red-tiger-eye/red-tiger-eye-2.jpg",
+      "/products/images/6mm/red-tiger-eye/red-tiger-eye-3.jpg",
+    ],
+    suggestedPrice: 650,
+    shortIntention: "Motivation, drive and vitality.",
+    description:
+      "Rich red tiger eye, a stone of motivation and energy, worn to stir momentum on the days you need a spark.",
+  },
+  {
+    id: "AMT06",
+    name: "Jade Bracelet (6mm)",
+    stone: "Jade",
+    images: ["/products/images/6mm/jade/jade-1.jpeg", "/products/images/6mm/jade/jade-2.jpeg"],
+    suggestedPrice: 500,
+    shortIntention: "Luck, balance and harmony.",
+    description:
+      "Soft olive jade, the timeless stone of luck and harmony, carried to invite calm balance and gentle good fortune.",
+  },
+  {
+    id: "AMT07",
+    name: "Tree Agate Bracelet (6mm)",
+    stone: "Tree Agate",
+    images: [
+      "/products/images/6mm/tree-agate/tree-agate-1.jpg",
+      "/products/images/6mm/tree-agate/tree-agate-2.jpg",
+      "/products/images/6mm/tree-agate/tree-agate-3.jpg",
+    ],
+    suggestedPrice: 500,
+    shortIntention: "Stability and quiet inner peace.",
+    description:
+      "Creamy tree agate veined with green — a grounding stone of stability and inner peace for staying rooted through the noise.",
+  },
+  {
+    id: "AMT08",
+    name: "Indian Bloodstone Bracelet (6mm)",
+    stone: "Indian Bloodstone",
+    images: [
+      "/products/images/6mm/indian-bloodstone/indian-bloodstone-1.jpg",
+      "/products/images/6mm/indian-bloodstone/indian-bloodstone-2.jpg",
+      "/products/images/6mm/indian-bloodstone/indian-bloodstone-3.jpg",
+      "/products/images/6mm/indian-bloodstone/indian-bloodstone-4.jpg",
+    ],
+    suggestedPrice: 800,
+    shortIntention: "Vitality, courage and resilience.",
+    description:
+      "Deep green bloodstone flecked with red, prized as the stone of vitality and courage, worn to renew strength and resolve.",
+  },
+  {
+    id: "AMT09",
+    name: "Pyrite Bracelet (6mm)",
+    stone: "Pyrite",
+    images: [
+      "/products/images/6mm/pyrite/pyrite-1.jpeg",
+      "/products/images/6mm/pyrite/pyrite-2.jpeg",
+      "/products/images/6mm/pyrite/pyrite-3.jpeg",
+    ],
+    suggestedPrice: 800,
+    shortIntention: "Abundance and protective strength.",
+    description:
+      "Golden, metallic pyrite — the merchant's stone of abundance and a protective shield, meant to draw prosperity and confidence.",
+  },
+  {
+    id: "AMT10",
+    name: "Botswana Agate Bracelet (6mm)",
+    stone: "Botswana Agate",
+    images: ["/products/images/6mm/botswana-agate/botswana-agate-1.jpg", "/products/images/6mm/botswana-agate/botswana-agate-2.jpg"],
+    suggestedPrice: 1100,
+    shortIntention: "Comfort through change.",
+    description:
+      "Banded botswana agate, the soothing stone of transition, worn for comfort and steadiness when life is shifting.",
+  },
+  // ── 8mm ──────────────────────────────────────────────────────────────
+  {
+    id: "AMT11",
+    name: "Dyed Jade Bracelet (8mm)",
+    stone: "Dyed Jade",
+    image: "/stones/dyed-jade.jpg",
+    suggestedPrice: 500,
+    shortIntention: "Renewal and gentle balance.",
+    description:
+      "Vivid green dyed jade, a fresh take on the stone of harmony, worn to invite renewal and an easy sense of balance.",
+  },
+  {
+    id: "AMT12",
+    name: "African Amethyst Bracelet (8mm)",
+    stone: "African Amethyst",
+    image: "/stones/african-amethyst.jpg",
+    suggestedPrice: 950,
+    shortIntention: "Calm clarity and intuition.",
+    description:
+      "Deep violet African amethyst, the stone of serenity, worn to quiet an overactive mind and open space for intuition.",
+  },
+  {
+    id: "AMT13",
+    name: "Dyed Citrine & Green Aventurine Bracelet (8mm)",
+    stone: "Dyed Citrine · Green Aventurine",
+    images: ["/stones/dyed-citrine.jpg", "/stones/green-aventurine.jpg"],
+    suggestedPrice: 900,
+    shortIntention: "Joyful energy and new opportunity.",
+    description:
+      "Sunny citrine paired with lucky green aventurine — a bright strand for joyful energy and an open door to opportunity.",
+  },
+  {
+    id: "AMT14",
+    name: "Black Tourmaline Bracelet (8mm)",
     stone: "Black Tourmaline",
-    price: 2299,
-    shortIntention: "Ground your energy and shield from negativity.",
+    image: "/stones/black-tourmaline.jpg",
+    suggestedPrice: 1150,
+    shortIntention: "Protection and deep grounding.",
     description:
-      "Deep, grounding black tourmaline — a protective anchor for body and spirit. This ritual is intended to steady the nerves, return you to the present, and form a quiet shield against draining energy.",
-    images: ["/products/tigereye.jpg", "/products/jade.jpg", "/products/citrine.jpeg"],
+      "Deep black tourmaline, a protective anchor for body and spirit, worn to steady the nerves and shield against draining energy.",
   },
   {
-    id: "AMR-CLQ-01",
-    name: "Clear Quartz Clarity Ritual",
-    stone: "Clear Quartz",
-    price: 2199,
-    shortIntention: "Amplify intention and clear the path ahead.",
+    id: "AMT15",
+    name: "Jade Bracelet (8mm)",
+    stone: "Jade",
+    image: "/stones/jade-8mm.jpg",
+    suggestedPrice: 550,
+    shortIntention: "Luck, balance and harmony.",
     description:
-      "Luminous clear quartz, revered as the master healer and amplifier. Worn with purpose, it is meant to sharpen focus, magnify your intentions, and bring lucid clarity to each new day.",
-    images: ["/products/jade.jpg", "/products/amethyst.jpg", "/products/tigereye.jpg"],
+      "Soft olive jade in a bolder 8mm bead — the timeless stone of luck and harmony, for calm balance and gentle good fortune.",
+  },
+  {
+    id: "AMT16",
+    name: "Indian Bloodstone Bracelet (8mm)",
+    stone: "Indian Bloodstone",
+    image: "/stones/indian-bloodstone-8mm.jpg",
+    suggestedPrice: 950,
+    shortIntention: "Vitality, courage and resilience.",
+    description:
+      "Deep green bloodstone flecked with red in a generous 8mm bead, prized for vitality and courage, worn to renew strength and resolve.",
+  },
+  {
+    id: "AMT17",
+    name: "Indian Agate Bracelet (8mm)",
+    stone: "Indian Agate",
+    image: "/stones/indian-agate.jpg",
+    suggestedPrice: 650,
+    shortIntention: "Grounding and steady stability.",
+    description:
+      "Earthy banded Indian agate, a grounding stone of stability and balance, worn to stay calm and centred through the day.",
+  },
+  {
+    id: "AMT18",
+    name: "Lapis Lazuli Bracelet (8mm)",
+    stone: "Lapis Lazuli",
+    image: "/stones/lapis-lazuli.jpg",
+    suggestedPrice: 1100,
+    shortIntention: "Wisdom, truth and insight.",
+    description:
+      "Royal blue lapis lazuli flecked with gold, the ancient stone of wisdom and truth, worn to sharpen insight and self-expression.",
+  },
+  {
+    id: "AMT19",
+    name: "Web Jasper Bracelet (8mm)",
+    stone: "Web Jasper",
+    suggestedPrice: 650,
+    shortIntention: "Calm, balance and grounding.",
+    description:
+      "Patterned web jasper, a nurturing stone of calm and balance, worn to feel grounded and gently supported.",
   },
 ]);
 

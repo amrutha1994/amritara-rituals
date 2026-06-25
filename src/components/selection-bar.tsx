@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { products } from "@/data/products";
+import { products, SHIPPING_FEE } from "@/data/products";
 import { getStone } from "@/data/stones";
 import { useSelection } from "@/components/selection-provider";
 import {
@@ -222,6 +222,22 @@ export default function SelectionBar() {
               </li>
             ))}
           </ul>
+
+          {/* Price breakdown — shipping is shown separately from the items. */}
+          <div className="mt-3 flex flex-col gap-1 border-t border-border pt-3 text-sm">
+            <div className="flex items-center justify-between text-muted">
+              <span>Subtotal</span>
+              <span>{inr.format(total)}</span>
+            </div>
+            <div className="flex items-center justify-between text-muted">
+              <span>Shipping</span>
+              <span>{inr.format(SHIPPING_FEE)}</span>
+            </div>
+            <div className="flex items-center justify-between font-semibold text-foreground">
+              <span>Total</span>
+              <span>{inr.format(total + SHIPPING_FEE)}</span>
+            </div>
+          </div>
 
           {IS_WHATSAPP_PLACEHOLDER && (
             <p className="mt-3 text-xs leading-5 text-muted">

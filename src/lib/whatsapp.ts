@@ -1,4 +1,4 @@
-import type { BraceletSizeId, Product } from "@/data/products";
+import { SHIPPING_FEE, type BraceletSizeId, type Product } from "@/data/products";
 
 // WhatsApp Business number in full international format: country code + number,
 // digits only (no '+', spaces, or dashes). India (+91) 9249041474.
@@ -110,6 +110,9 @@ export function buildProductOrderText(
     `• ${lineText({ product, size, qty: 1 })}`,
     ...(imageUrl ? ["", `Photo: ${imageUrl}`] : []),
     "",
+    `Shipping: ${inr.format(SHIPPING_FEE)}`,
+    `Total: ${inr.format(product.price + SHIPPING_FEE)}`,
+    "",
     "Could you help me complete the order?",
   ].join("\n");
 }
@@ -129,6 +132,9 @@ export function buildCustomOrderText(line: CustomOrderLine): string {
     "Hi Amritara Rituals!",
     "I'd like to order this custom bracelet:",
     `• ${customLineText(line)}`,
+    "",
+    `Shipping: ${inr.format(SHIPPING_FEE)}`,
+    `Total: ${inr.format(line.unitPrice * line.qty + SHIPPING_FEE)}`,
     "",
     "Could you help me complete the order?",
   ].join("\n");
@@ -170,7 +176,9 @@ export function buildSelectionOrderLink(
     ...productRows,
     ...customRows,
     "",
-    `Total: ${inr.format(total)}`,
+    `Subtotal: ${inr.format(total)}`,
+    `Shipping: ${inr.format(SHIPPING_FEE)}`,
+    `Total: ${inr.format(total + SHIPPING_FEE)}`,
     "Could you help me complete the order?",
   ].join("\n");
   return waLink(text);

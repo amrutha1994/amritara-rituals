@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { products } from "@/data/products";
+import { products, SHIPPING_FEE } from "@/data/products";
 import ProductOrderPanel from "@/components/product-order-panel";
 import ProductGallery from "@/components/product-gallery";
 
@@ -67,6 +67,9 @@ export default async function ProductPage({
               </p>
               <p className="mt-5 text-2xl font-semibold text-primary-deep">
                 {inr.format(product.price)}
+              </p>
+              <p className="mt-1 text-sm text-muted">
+                + {inr.format(SHIPPING_FEE)} shipping at checkout
               </p>
 
               <p className="mt-6 text-base leading-8 text-muted">
