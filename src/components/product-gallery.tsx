@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import ProductImage from "@/components/product-image";
 import type { Product } from "@/data/products";
 
 function ChevronIcon({
@@ -45,7 +46,7 @@ export default function ProductGallery({ product }: { product: Product }) {
     <div className="flex flex-col gap-4">
       {/* Main image */}
       <div className="relative aspect-square w-full overflow-hidden rounded-3xl border border-border bg-surface shadow-[0_18px_50px_-24px_rgba(144,86,141,0.5)]">
-        <Image
+        <ProductImage
           key={images[index]}
           src={images[index]}
           alt={`${name} — view ${index + 1} of ${images.length}`}
