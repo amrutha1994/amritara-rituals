@@ -76,6 +76,27 @@ export default async function ProductPage({
                 {product.description}
               </p>
 
+              {product.benefits && product.benefits.length > 0 && (
+                <div className="mt-7">
+                  <h2 className="text-xs font-semibold uppercase tracking-[0.25em] text-gold-antique">
+                    Spiritual Benefits
+                  </h2>
+                  <ul className="mt-4 flex flex-col gap-3">
+                    {product.benefits.map((benefit) => (
+                      <li key={benefit} className="flex items-start gap-3">
+                        <span
+                          aria-hidden
+                          className="mt-2 h-1.5 w-1.5 shrink-0 rotate-45 bg-gold-antique"
+                        />
+                        <span className="text-base leading-7 text-muted">
+                          {benefit}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               <ProductOrderPanel product={product} />
             </div>
           </div>
