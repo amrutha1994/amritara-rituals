@@ -11,7 +11,7 @@ import {
   fromPrice,
   type BeadSize,
 } from "@/data/stones";
-import { BRACELET_SIZES, type BraceletSizeId } from "@/data/products";
+import { BRACELET_SIZES, SHIPPING_FEE, type BraceletSizeId } from "@/data/products";
 import { buildCustomOrderLink, type CustomOrderLine } from "@/lib/whatsapp";
 import { useSelection } from "@/components/selection-provider";
 import { useToast } from "@/components/toast-provider";
@@ -370,9 +370,10 @@ export default function BraceletCustomiser() {
                 {chosenStones.length === 0 ? "—" : inr.format(totalPrice)}
               </span>
             </div>
-            {isCombo && (
+            {chosenStones.length > 0 && (
               <p className="mt-1 text-xs text-muted">
-                Combination price — the average of your chosen stones.
+                + {inr.format(SHIPPING_FEE)} shipping at checkout
+                {isCombo && " · combination price is the average of your stones"}
               </p>
             )}
           </div>

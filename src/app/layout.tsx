@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Mulish } from "next/font/google";
 import "./globals.css";
+import LaunchBanner from "@/components/launch-banner";
 import SiteHeader from "@/components/site-header";
 import SiteFooter from "@/components/site-footer";
 import { SelectionProvider } from "@/components/selection-provider";
@@ -41,6 +42,8 @@ export default function RootLayout({
         <ToastProvider>
           <SelectionProvider>
             <ProductSheetProvider>
+              {/* TEMPORARY launch notice — remove with the component when live */}
+              <LaunchBanner />
               <SiteHeader />
               <div className="flex flex-1 flex-col">{children}</div>
               <SiteFooter />

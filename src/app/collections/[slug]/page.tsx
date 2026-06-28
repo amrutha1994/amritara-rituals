@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { products } from "@/data/products";
+import { products, SHIPPING_FEE } from "@/data/products";
 import ProductOrderPanel from "@/components/product-order-panel";
 import ProductGallery from "@/components/product-gallery";
 
@@ -68,10 +68,34 @@ export default async function ProductPage({
               <p className="mt-5 text-2xl font-semibold text-primary-deep">
                 {inr.format(product.price)}
               </p>
+              <p className="mt-1 text-sm text-muted">
+                + {inr.format(SHIPPING_FEE)} shipping at checkout
+              </p>
 
               <p className="mt-6 text-base leading-8 text-muted">
                 {product.description}
               </p>
+
+              {product.benefits && product.benefits.length > 0 && (
+                <div className="mt-7">
+                  <h2 className="text-xs font-semibold uppercase tracking-[0.25em] text-gold-antique">
+                    Spiritual Benefits
+                  </h2>
+                  <ul className="mt-4 flex flex-col gap-3">
+                    {product.benefits.map((benefit) => (
+                      <li key={benefit} className="flex items-start gap-3">
+                        <span
+                          aria-hidden
+                          className="mt-2 h-1.5 w-1.5 shrink-0 rotate-45 bg-gold-antique"
+                        />
+                        <span className="text-base leading-7 text-muted">
+                          {benefit}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               <ProductOrderPanel product={product} />
             </div>

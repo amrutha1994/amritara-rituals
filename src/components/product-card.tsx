@@ -1,7 +1,7 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { Product } from "@/data/products";
 import CardAddButton from "@/components/card-add-button";
+import ProductImage from "@/components/product-image";
 
 const inr = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -21,7 +21,7 @@ export default function ProductCard({ product }: { product: Product }) {
         aria-label={`${product.name} — view details`}
         className="relative block aspect-square w-full overflow-hidden"
       >
-        <Image
+        <ProductImage
           src={product.image}
           alt={product.name}
           fill
