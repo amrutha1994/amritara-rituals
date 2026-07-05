@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import BraceletCustomiser from "@/components/bracelet-customiser";
-import { getStone, type BeadSize } from "@/data/stones";
+import { getStone, type BeadSize, type Stone } from "@/data/stones";
+import { getAllStones } from "@/sanity/queries";
 
 export const metadata: Metadata = {
   title: "Design your own ritual — Amritara Rituals",
@@ -15,7 +16,10 @@ export const metadata: Metadata = {
  * ids that actually belong to it. Anything off is ignored, so the page still
  * opens cleanly as a blank customiser.
  */
-function parsePrefill(searchParams: Record<string, string | string[] | undefined>) {
+function parsePrefill(
+  searchParams: Record<string, string | string[] | undefined>,
+  stones: Stone[],
+) {
   const sizeParam = Array.isArray(searchParams.size)
     ? searchParams.size[0]
     : searchParams.size;
@@ -29,7 +33,7 @@ function parsePrefill(searchParams: Record<string, string | string[] | undefined
   const stoneIds = (stonesParam ?? "")
     .split(",")
     .map((id) => id.trim())
-    .filter((id) => getStone(id)?.beadSize === beadSize);
+    .filter((id) => getStone(stones, id)?.beadSize === beadSize);
 
   return { beadSize, stoneIds };
 }
@@ -37,7 +41,8 @@ function parsePrefill(searchParams: Record<string, string | string[] | undefined
 export default async function CustomisePage({
   searchParams,
 }: PageProps<"/customise">) {
-  const { beadSize, stoneIds } = parsePrefill(await searchParams);
+  const stones = await getAllStones();
+  const { beadSize, stoneIds } = parsePrefill(await searchParams, stones);
   return (
     <main className="flex flex-1 flex-col">
       <section className="px-6 py-10 sm:py-14">

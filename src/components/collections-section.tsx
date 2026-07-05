@@ -1,7 +1,8 @@
-import { products } from "@/data/products";
+import { getAllProducts } from "@/sanity/queries";
 import ProductCard from "@/components/product-card";
 
-export default function CollectionsSection() {
+export default async function CollectionsSection() {
+  const products = await getAllProducts();
   return (
     <section id="collections" className="bg-background px-6 py-20">
       <div className="mx-auto max-w-6xl">

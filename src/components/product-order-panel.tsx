@@ -8,6 +8,7 @@ import {
 } from "@/data/products";
 import {
   buildProductOrderLink,
+  toAbsoluteImageUrl,
   IS_WHATSAPP_PLACEHOLDER,
 } from "@/lib/whatsapp";
 import { useSelection } from "@/components/selection-provider";
@@ -40,7 +41,7 @@ export default function ProductOrderPanel({ product }: { product: Product }) {
     // product photo so WhatsApp renders it as a preview. We build the href on
     // click so we can use the live origin (avoids a hydration mismatch).
     e.preventDefault();
-    const imageUrl = `${window.location.origin}${product.image}`;
+    const imageUrl = toAbsoluteImageUrl(product.image, window.location.origin);
     window.open(
       buildProductOrderLink(product, size, imageUrl),
       "_blank",

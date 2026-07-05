@@ -2,22 +2,31 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { INTENTIONS, getIntention } from "@/data/intentions";
 import { recommendStonesForIntention, productForStone } from "@/data/stones";
+import { useCatalog } from "@/components/catalog-provider";
 import ProductImage from "@/components/product-image";
 
 /** How many stones the finder reveals for the chosen intention. */
 const BLEND_SIZE = 3;
 
 export default function StoneFinder() {
+  const {
+    intentions: INTENTIONS,
+    stones: allStones,
+    products,
+    getIntention,
+  } = useCatalog();
   const [intention, setIntention] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
 
   const chosen = intention ? getIntention(intention) : undefined;
 
   const stones = useMemo(
-    () => (intention ? recommendStonesForIntention(intention, BLEND_SIZE) : []),
-    [intention],
+    () =>
+      intention
+        ? recommendStonesForIntention(allStones, intention, BLEND_SIZE)
+        : [],
+    [allStones, intention],
   );
 
   const reset = () => {
@@ -45,7 +54,7 @@ export default function StoneFinder() {
 
         <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-3">
           {stones.map((stone) => {
-            const product = productForStone(stone);
+            const product = productForStone(stone, products);
             const href = product
               ? `/collections/${product.slug}`
               : `/customise?size=${stone.beadSize}&stones=${stone.id}`;
@@ -93,7 +102,27 @@ export default function StoneFinder() {
           </li>
         </ul>
 
-        <div className="mt-10 flex justify-center">
+        <div className="mt-12 rounded-3xl border border-gold/30 bg-surface p-6 text-center sm:p-8">
+          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gold-antique">
+            Make it yours
+          </p>
+          <h3 className="mt-3 font-display text-xl font-medium text-foreground sm:text-2xl">
+            You can also customise your own bracelet
+          </h3>
+          <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-muted">
+            Prefer a different stone, or a blend of a few? Choose your bead size
+            and combine the crystals whose energy you&apos;re reaching for into a
+            bracelet made just for you.
+          </p>
+          <Link
+            href="/customise"
+            className="mt-6 inline-flex rounded-full bg-primary px-8 py-3 text-sm font-medium text-white shadow-sm ring-1 ring-gold-light/30 transition-colors hover:bg-primary-deep"
+          >
+            Customise your bracelet
+          </Link>
+        </div>
+
+        <div className="mt-8 flex justify-center">
           <button
             type="button"
             onClick={reset}

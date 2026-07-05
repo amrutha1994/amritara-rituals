@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { products, SHIPPING_FEE } from "@/data/products";
+import { SHIPPING_FEE } from "@/data/products";
+import { getAllProducts, getProductBySlug } from "@/sanity/queries";
 import ProductOrderPanel from "@/components/product-order-panel";
 import ProductGallery from "@/components/product-gallery";
 
@@ -11,12 +12,9 @@ const inr = new Intl.NumberFormat("en-IN", {
   maximumFractionDigits: 0,
 });
 
-function getProduct(slug: string) {
-  return products.find((p) => p.slug === slug);
-}
-
 // Pre-render a page for every product at build time.
-export function generateStaticParams() {
+export async function generateStaticParams() {
+  const products = await getAllProducts();
   return products.map((product) => ({ slug: product.slug }));
 }
 
@@ -24,7 +22,7 @@ export async function generateMetadata({
   params,
 }: PageProps<"/collections/[slug]">): Promise<Metadata> {
   const { slug } = await params;
-  const product = getProduct(slug);
+  const product = await getProductBySlug(slug);
   if (!product) return { title: "Ritual not found — Amritara Rituals" };
   return {
     title: `${product.name} — Amritara Rituals`,
@@ -36,7 +34,7 @@ export default async function ProductPage({
   params,
 }: PageProps<"/collections/[slug]">) {
   const { slug } = await params;
-  const product = getProduct(slug);
+  const product = await getProductBySlug(slug);
   if (!product) notFound();
 
   return (
