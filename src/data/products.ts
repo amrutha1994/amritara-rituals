@@ -573,4 +573,9 @@ export const products: Product[] = defineProducts([
   },
 ]);
 
+/** Look up a product by its stable tracking code / id. */
+export function getProduct(id: string): Product | undefined {
+  return products.find((p) => p.id === id);
+}
+
 export default products;

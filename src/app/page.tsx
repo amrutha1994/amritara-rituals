@@ -59,10 +59,10 @@ export default function Home() {
                   Explore the collection
                 </Link>
                 <Link
-                  href="#story"
-                  className="rounded-full border border-border bg-surface/70 px-7 py-3 text-center text-sm font-medium text-primary-deep backdrop-blur-sm transition-colors hover:border-primary"
+                  href="/stone-finder"
+                  className="rounded-full border border-gold/40 bg-surface/70 px-7 py-3 text-center text-sm font-medium text-gold-antique backdrop-blur-sm transition-colors hover:border-gold hover:text-primary-deep"
                 >
-                  Our story
+                  Find your stone
                 </Link>
               </div>
             </div>

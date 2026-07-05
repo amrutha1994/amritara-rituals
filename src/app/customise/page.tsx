@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import BraceletCustomiser from "@/components/bracelet-customiser";
+import { getStone, type BeadSize } from "@/data/stones";
 
 export const metadata: Metadata = {
   title: "Design your own ritual — Amritara Rituals",
@@ -8,7 +9,35 @@ export const metadata: Metadata = {
     "Build a custom gemstone bracelet. Choose your bead size, combine the stones whose energy you're reaching for, and order it your way.",
 };
 
-export default function CustomisePage() {
+/**
+ * Reads an optional `?size=&stones=` hand-off (e.g. from the Stone Finder) and
+ * returns it only if it's internally consistent — a known bead size with stone
+ * ids that actually belong to it. Anything off is ignored, so the page still
+ * opens cleanly as a blank customiser.
+ */
+function parsePrefill(searchParams: Record<string, string | string[] | undefined>) {
+  const sizeParam = Array.isArray(searchParams.size)
+    ? searchParams.size[0]
+    : searchParams.size;
+  const beadSize: BeadSize | null =
+    sizeParam === "6mm" || sizeParam === "8mm" ? sizeParam : null;
+  if (!beadSize) return { beadSize: null, stoneIds: [] as string[] };
+
+  const stonesParam = Array.isArray(searchParams.stones)
+    ? searchParams.stones[0]
+    : searchParams.stones;
+  const stoneIds = (stonesParam ?? "")
+    .split(",")
+    .map((id) => id.trim())
+    .filter((id) => getStone(id)?.beadSize === beadSize);
+
+  return { beadSize, stoneIds };
+}
+
+export default async function CustomisePage({
+  searchParams,
+}: PageProps<"/customise">) {
+  const { beadSize, stoneIds } = parsePrefill(await searchParams);
   return (
     <main className="flex flex-1 flex-col">
       <section className="px-6 py-10 sm:py-14">
@@ -37,7 +66,10 @@ export default function CustomisePage() {
           </div>
 
           <div className="mt-12">
-            <BraceletCustomiser />
+            <BraceletCustomiser
+              initialBeadSize={beadSize}
+              initialStoneIds={stoneIds}
+            />
           </div>
         </div>
       </section>

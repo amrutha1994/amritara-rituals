@@ -45,9 +45,19 @@ function StepHeading({ n, title, hint }: { n: number; title: string; hint?: stri
   );
 }
 
-export default function BraceletCustomiser() {
-  const [beadSize, setBeadSize] = useState<BeadSize | null>(null);
-  const [stoneIds, setStoneIds] = useState<string[]>([]);
+export default function BraceletCustomiser({
+  initialBeadSize = null,
+  initialStoneIds = [],
+}: {
+  /** Pre-selected bead size — e.g. handed off from the Stone Finder. */
+  initialBeadSize?: BeadSize | null;
+  /** Pre-selected stone ids (must belong to `initialBeadSize`). */
+  initialStoneIds?: string[];
+} = {}) {
+  const [beadSize, setBeadSize] = useState<BeadSize | null>(initialBeadSize);
+  const [stoneIds, setStoneIds] = useState<string[]>(() =>
+    initialStoneIds.slice(0, MAX_STONES),
+  );
   const [wrist, setWrist] = useState<BraceletSizeId | null>(null);
   const [qty, setQty] = useState(1);
   const [error, setError] = useState<string | null>(null);
