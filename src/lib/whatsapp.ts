@@ -23,6 +23,15 @@ function waLink(text: string): string {
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
 }
 
+/**
+ * Absolute URL for an image that may already be absolute (a Sanity CDN URL) or a
+ * site-relative path (a local fallback). WhatsApp needs a full URL to render a
+ * photo preview, so relative paths are prefixed with the current origin.
+ */
+export function toAbsoluteImageUrl(image: string, origin: string): string {
+  return /^https?:\/\//.test(image) ? image : `${origin}${image}`;
+}
+
 /** Deep link that opens WhatsApp pre-filled for a general enquiry. */
 export function buildContactLink(): string {
   const text = [
@@ -166,7 +175,9 @@ export function buildSelectionOrderLink(
   let n = 0;
   const productRows = lines.map((l) => {
     const row = `${++n}. ${lineText(l)}`;
-    return origin ? `${row}\n   Photo: ${origin}${l.product.image}` : row;
+    return origin
+      ? `${row}\n   Photo: ${toAbsoluteImageUrl(l.product.image, origin)}`
+      : row;
   });
   const customRows = customLines.map((c) => `${++n}. ${customLineText(c)}`);
 

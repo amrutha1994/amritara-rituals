@@ -1,13 +1,6 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Mulish } from "next/font/google";
 import "./globals.css";
-import LaunchBanner from "@/components/launch-banner";
-import SiteHeader from "@/components/site-header";
-import SiteFooter from "@/components/site-footer";
-import { SelectionProvider } from "@/components/selection-provider";
-import { ToastProvider } from "@/components/toast-provider";
-import { ProductSheetProvider } from "@/components/product-sheet-provider";
-import SelectionBar from "@/components/selection-bar";
 
 // Elegant serif for the wordmark & headings — echoes the logo's lettering.
 const display = Cormorant_Garamond({
@@ -28,6 +21,11 @@ export const metadata: Metadata = {
     "Amritara Rituals crafts gemstone bracelets as wearable rituals. Our collection is launching soon.",
 };
 
+/**
+ * Root layout — intentionally minimal. It only owns <html>/<body>, fonts and
+ * global styles so it can be shared by both the storefront (the `(site)` group,
+ * which adds the header/footer chrome) and the chrome-free `/studio` route.
+ */
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -38,20 +36,7 @@ export default function RootLayout({
       lang="en"
       className={`${display.variable} ${body.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
-        <ToastProvider>
-          <SelectionProvider>
-            <ProductSheetProvider>
-              {/* TEMPORARY launch notice — remove with the component when live */}
-              <LaunchBanner />
-              <SiteHeader />
-              <div className="flex flex-1 flex-col">{children}</div>
-              <SiteFooter />
-              <SelectionBar />
-            </ProductSheetProvider>
-          </SelectionProvider>
-        </ToastProvider>
-      </body>
+      <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
 }

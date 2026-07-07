@@ -1,4 +1,13 @@
+import type { Product } from "@/data/products";
 import type { BraceletSizeId } from "@/data/products";
+import type { IntentionId } from "@/data/intentions";
+
+/**
+ * Stone content is authored in Sanity and mapped to these shapes in
+ * `src/sanity/queries.ts`. This module keeps the types, config constants and
+ * the pure pricing / recommendation logic — all of which take the fetched data
+ * as arguments so they stay client-safe and testable.
+ */
 
 /**
  * Bead diameter. Stones are offered in one bead size each — the size shapes the
@@ -24,121 +33,137 @@ export const BEAD_SIZES: BeadSizeInfo[] = [
 export const MIN_STONES = 1;
 export const MAX_STONES = 4;
 
-/** Custom-bracelet prices are rounded to the nearest this many rupees. */
-export const PRICE_ROUNDING = 50;
+/** Custom prices are rounded to the nearest this many rupees to stay tidy. */
+export const PRICE_ROUNDING = 10;
+
+/**
+ * One-time blend fee (rupees) added when a custom strand mixes 2+ stones. A
+ * bracelet is a single fixed-length band shared equally among its stones, so the
+ * stone cost is their average — this flat fee (charged once, never per stone)
+ * covers the extra hand-work of laying out a blended design. A single-stone
+ * custom strand pays no fee, so it costs exactly its ready-made bracelet price.
+ */
+export const BLEND_FEE = 100;
 
 /** Wrist sizes available for a custom bracelet (same range as the catalogue). */
 export type { BraceletSizeId };
 
 export interface Stone {
-  /** Stable id used in the cart + WhatsApp order. */
+  /** Stable id (Sanity `slug`), used in the cart + WhatsApp order. */
   id: string;
   /** Display name, e.g. "Tiger Eye". */
   name: string;
   beadSize: BeadSize;
   /** Short intention / property, e.g. "Confidence & protection". */
   power: string;
+  /** The intentions this stone serves (intention ids), used by the finder. */
+  intentions: IntentionId[];
   /**
-   * Price of a full single-stone bracelet of this stone (rupees). This already
-   * reflects the bead size and the stone's relative cost. A combination strand
-   * is priced as the average of its stones (see `priceForStones`), since the
-   * strand is divided among them rather than adding beads.
+   * Retail price (rupees, ex-shipping) of a full single-stone bracelet of this
+   * stone — the source of truth for custom pricing.
    */
   price: number;
-  /** Path to the stone swatch image (under /public). */
+  /** Stone swatch image URL. */
   image: string;
+  /** The bracelet product code this stone links to from the finder's "Buy now". */
+  productId?: string;
 }
-
-// NOTE: images are reused from the existing product photos as placeholders.
-// Swap in proper close-up swatch photos under /public/stones when available.
-const PLACEHOLDER = "/hero-banner.jpg";
-
-type StoneInput = Omit<Stone, "id" | "image"> & { id?: string; image?: string };
-
-/** "Indian Agate" -> "indian-agate" */
-function slugify(value: string): string {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
-function defineStones(items: StoneInput[]): Stone[] {
-  const ids = new Set<string>();
-  return items.map((item) => {
-    // Ids carry the bead size so the same stone can exist in both 6mm and 8mm
-    // (e.g. Jade) without clashing.
-    const id = item.id ?? `${slugify(item.name)}-${item.beadSize}`;
-    if (ids.has(id)) throw new Error(`Duplicate stone id: "${id}"`);
-    ids.add(id);
-    return { ...item, id, image: item.image ?? PLACEHOLDER };
-  });
-}
-
-// ─────────────────────────────────────────────────────────────────────────
-// To add a stone: copy a line, set its name, bead size, power and a photo.
-// `id` is derived from the name and `image` falls back to a placeholder.
-// ─────────────────────────────────────────────────────────────────────────
-export const stones: Stone[] = defineStones([
-  // 8mm — real inventory. Prices set a little above each strand's cost from the
-  // purchase tracker (a strand makes ~2 bracelets), keeping cost ordering.
-  { name: "Jade", beadSize: "8mm", power: "Luck & harmony", price: 249, image: "/stones/jade-8mm.jpg" },
-  { name: "Green Aventurine", beadSize: "8mm", power: "Luck & opportunity", price: 329, image: "/stones/green-aventurine.jpg" },
-  { name: "Indian Agate", beadSize: "8mm", power: "Grounding & stability", price: 349, image: "/stones/indian-agate.jpg" },
-  { name: "Indian Bloodstone", beadSize: "8mm", power: "Vitality & courage", price: 629, image: "/stones/indian-bloodstone-8mm.jpg" },
-  { name: "African Amethyst", beadSize: "8mm", power: "Calm & intuition", price: 649, image: "/stones/african-amethyst.jpg" },
-  { name: "Lapis Lazuli", beadSize: "8mm", power: "Wisdom & truth", price: 779, image: "/stones/lapis-lazuli.jpg" },
-  { name: "Dyed Citrine", beadSize: "8mm", power: "Joy & abundance", price: 799, image: "/stones/dyed-citrine.jpg" },
-  { name: "Black Tourmaline", beadSize: "8mm", power: "Protection & grounding", price: 849, image: "/stones/black-tourmaline.jpg" },
-  // 6mm — real inventory. Prices are set a little above each strand's cost
-  // from the purchase tracker (a strand makes ~2 bracelets), keeping the
-  // sheet's relative ordering. Adjust freely.
-  { name: "Matte Yellow Tiger Eye", beadSize: "6mm", power: "Confidence & courage", price: 299, image: "/stones/matte-yellow-tiger-eye.jpg" },
-  { name: "Red Tiger Eye", beadSize: "6mm", power: "Motivation & vitality", price: 329, image: "/stones/red-tiger-eye.jpg" },
-  { name: "Moss Agate", beadSize: "6mm", power: "Growth & abundance", price: 269, image: "/stones/moss-agate.jpg" },
-  { name: "Tree Agate", beadSize: "6mm", power: "Stability & inner peace", price: 209, image: "/stones/tree-agate.jpg" },
-  { name: "Shattuckite", beadSize: "6mm", power: "Intuition & truth", price: 349, image: "/stones/shattuckite.jpg" },
-  { name: "Black Lava", beadSize: "6mm", power: "Grounding & strength", price: 149, image: "/stones/black-lava.jpg" },
-  { name: "Jade", beadSize: "6mm", power: "Luck & harmony", price: 229, image: "/stones/jade.jpg" },
-  { name: "Dyed Jade", beadSize: "6mm", power: "Renewal & balance", price: 199, image: "/stones/dyed-jade.jpg" },
-  { name: "Black Zebra Jasper", beadSize: "6mm", power: "Balance & grounding", price: 299, image: "/stones/black-zebra-jasper.jpg" },
-  { name: "Indian Bloodstone", beadSize: "6mm", power: "Vitality & courage", price: 499, image: "/stones/indian-bloodstone.jpg" },
-  { name: "Pyrite", beadSize: "6mm", power: "Abundance & protection", price: 499, image: "/stones/pyrite.jpg" },
-  // NOTE: Botswana Agate is 6mm per the purchase sheet (its photo was in the
-  // 8mm folder by mistake). Move to 8mm here if you actually stock it in 8mm.
-  { name: "Botswana Agate", beadSize: "6mm", power: "Comfort & change", price: 779, image: "/stones/botswana-agate.jpg" },
-]);
 
 /** Stones offered in a given bead size, in display order. */
-export function stonesBySize(beadSize: BeadSize): Stone[] {
+export function stonesBySize(stones: Stone[], beadSize: BeadSize): Stone[] {
   return stones.filter((s) => s.beadSize === beadSize);
 }
 
-/** Look up a stone by id. */
-export function getStone(id: string): Stone | undefined {
+/** Look up a stone by id within a fetched list. */
+export function getStone(stones: Stone[], id: string): Stone | undefined {
   return stones.find((s) => s.id === id);
 }
 
+export interface PriceBreakdown {
+  /** The stones' shared strand cost — the average of the chosen stone prices. */
+  base: number;
+  /** One-time blend fee — BLEND_FEE for a mix of 2+ stones, else 0. */
+  blendFee: number;
+  /** base + blendFee. */
+  total: number;
+}
+
 /**
- * Price of a custom bracelet for the chosen stones. A single stone is its own
- * price; a combination is the average of the chosen stones, rounded to keep
- * totals tidy — because the strand is shared between them, not added up.
- * Returns 0 when nothing is chosen.
+ * Price of a custom bracelet for the chosen stones — "the strand shared equally
+ * among your stones, plus a one-time blend fee when you mix":
+ *
+ *   unit = round(average of stone prices) + (stoneCount > 1 ? BLEND_FEE : 0)
+ *
+ * A single stone costs exactly its ready-made bracelet price (no fee); a blend
+ * costs the average of its stones plus one flat fee. Returns 0 when nothing is
+ * chosen.
  */
-export function priceForStones(stoneIds: string[]): number {
+export function priceForStones(stoneIds: string[], stones: Stone[]): number {
+  return priceBreakdownForStones(stoneIds, stones).total;
+}
+
+/** Itemised custom price, so the summary can show how the total is built. */
+export function priceBreakdownForStones(
+  stoneIds: string[],
+  stones: Stone[],
+): PriceBreakdown {
   const prices = stoneIds
-    .map((id) => getStone(id)?.price)
+    .map((id) => getStone(stones, id)?.price)
     .filter((p): p is number => p !== undefined);
-  if (prices.length === 0) return 0;
+  if (prices.length === 0) {
+    return { base: 0, blendFee: 0, total: 0 };
+  }
   const avg = prices.reduce((sum, p) => sum + p, 0) / prices.length;
-  return Math.round(avg / PRICE_ROUNDING) * PRICE_ROUNDING;
+  const base = Math.round(avg / PRICE_ROUNDING) * PRICE_ROUNDING;
+  const blendFee = prices.length > 1 ? BLEND_FEE : 0;
+  return { base, blendFee, total: base + blendFee };
+}
+
+/**
+ * Recommends the best stones for a single intention, across all bead sizes —
+ * used by the Stone Finder's one-step flow. Stones that serve the intention are
+ * ranked most-focused first (a stone devoted to this intention beats a
+ * scattergun one), then cheapest, then deduped by name so the same stone doesn't
+ * appear twice in 6mm and 8mm. Returns up to `count`.
+ */
+export function recommendStonesForIntention(
+  stones: Stone[],
+  intentionId: string,
+  count = 3,
+): Stone[] {
+  const ranked = stones
+    .filter((s) => s.intentions.includes(intentionId))
+    .sort(
+      (a, b) => a.intentions.length - b.intentions.length || a.price - b.price,
+    );
+
+  const seen = new Set<string>();
+  const unique: Stone[] = [];
+  for (const stone of ranked) {
+    if (seen.has(stone.name)) continue;
+    seen.add(stone.name);
+    unique.push(stone);
+    if (unique.length >= count) break;
+  }
+  return unique;
+}
+
+/**
+ * The bracelet product a stone links to from the finder. Prefers the explicit
+ * `productId`, falling back to a same-stone match by name.
+ */
+export function productForStone(
+  stone: Stone,
+  products: Product[],
+): Product | undefined {
+  if (stone.productId) return products.find((p) => p.id === stone.productId);
+  return products.find(
+    (p) => p.stone.toLowerCase() === stone.name.toLowerCase(),
+  );
 }
 
 /** Cheapest stone offered in a bead size — used for a "from ₹…" hint. */
-export function fromPrice(beadSize: BeadSize): number {
-  const prices = stonesBySize(beadSize).map((s) => s.price);
+export function fromPrice(stones: Stone[], beadSize: BeadSize): number {
+  const prices = stonesBySize(stones, beadSize).map((s) => s.price);
   return prices.length ? Math.min(...prices) : 0;
 }
-
-export default stones;

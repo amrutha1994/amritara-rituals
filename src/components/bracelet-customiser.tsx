@@ -7,12 +7,17 @@ import {
   MAX_STONES,
   stonesBySize,
   getStone,
-  priceForStones,
+  priceBreakdownForStones,
   fromPrice,
   type BeadSize,
 } from "@/data/stones";
 import { BRACELET_SIZES, SHIPPING_FEE, type BraceletSizeId } from "@/data/products";
-import { buildCustomOrderLink, type CustomOrderLine } from "@/lib/whatsapp";
+import {
+  buildCustomOrderLink,
+  toAbsoluteImageUrl,
+  type CustomOrderLine,
+} from "@/lib/whatsapp";
+import { useCatalog } from "@/components/catalog-provider";
 import { useSelection } from "@/components/selection-provider";
 import { useToast } from "@/components/toast-provider";
 import SizeChart from "@/components/size-chart";
@@ -45,26 +50,39 @@ function StepHeading({ n, title, hint }: { n: number; title: string; hint?: stri
   );
 }
 
-export default function BraceletCustomiser() {
-  const [beadSize, setBeadSize] = useState<BeadSize | null>(null);
-  const [stoneIds, setStoneIds] = useState<string[]>([]);
+export default function BraceletCustomiser({
+  initialBeadSize = null,
+  initialStoneIds = [],
+}: {
+  /** Pre-selected bead size — e.g. handed off from the Stone Finder. */
+  initialBeadSize?: BeadSize | null;
+  /** Pre-selected stone ids (must belong to `initialBeadSize`). */
+  initialStoneIds?: string[];
+} = {}) {
+  const [beadSize, setBeadSize] = useState<BeadSize | null>(initialBeadSize);
+  const [stoneIds, setStoneIds] = useState<string[]>(() =>
+    initialStoneIds.slice(0, MAX_STONES),
+  );
   const [wrist, setWrist] = useState<BraceletSizeId | null>(null);
   const [qty, setQty] = useState(1);
   const [error, setError] = useState<string | null>(null);
 
+  const { stones } = useCatalog();
   const { addCustom } = useSelection();
   const { show } = useToast();
 
   const availableStones = useMemo(
-    () => (beadSize ? stonesBySize(beadSize) : []),
-    [beadSize],
+    () => (beadSize ? stonesBySize(stones, beadSize) : []),
+    [stones, beadSize],
   );
   const chosenStones = useMemo(
-    () => stoneIds.map((id) => getStone(id)).filter((s) => s !== undefined),
-    [stoneIds],
+    () =>
+      stoneIds.map((id) => getStone(stones, id)).filter((s) => s !== undefined),
+    [stones, stoneIds],
   );
 
-  const unitPrice = priceForStones(stoneIds);
+  const price = priceBreakdownForStones(stoneIds, stones);
+  const unitPrice = price.total;
   const totalPrice = unitPrice * qty;
   const atMax = stoneIds.length >= MAX_STONES;
   const isCombo = chosenStones.length > 1;
@@ -122,7 +140,7 @@ export default function BraceletCustomiser() {
       size: wrist,
       qty,
       unitPrice,
-      imageUrls: chosenStones.map((s) => `${origin}${s.image}`),
+      imageUrls: chosenStones.map((s) => toAbsoluteImageUrl(s.image, origin)),
     };
     window.open(buildCustomOrderLink(line), "_blank", "noopener,noreferrer");
   };
@@ -154,7 +172,7 @@ export default function BraceletCustomiser() {
                       {b.id}
                     </span>
                     <span className="text-sm font-semibold text-primary-deep">
-                      from {inr.format(fromPrice(b.id))}
+                      from {inr.format(fromPrice(stones, b.id))}
                     </span>
                   </div>
                   <span className="mt-1 text-sm font-medium text-primary-deep">
@@ -364,6 +382,24 @@ export default function BraceletCustomiser() {
 
           {/* Price */}
           <div className="mt-5 border-t border-border pt-4">
+            {isCombo && (
+              <div className="mb-3 flex flex-col gap-1 text-xs text-muted">
+                <div className="flex items-center justify-between">
+                  <span>Stones · average of {chosenStones.length}</span>
+                  <span>{inr.format(price.base)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Blend fee</span>
+                  <span>+ {inr.format(price.blendFee)}</span>
+                </div>
+                {qty > 1 && (
+                  <div className="flex items-center justify-between">
+                    <span>Quantity × {qty}</span>
+                    <span>{inr.format(unitPrice)} each</span>
+                  </div>
+                )}
+              </div>
+            )}
             <div className="flex items-baseline justify-between">
               <span className="text-sm text-muted">Total</span>
               <span className="text-2xl font-semibold text-primary-deep">
@@ -373,7 +409,6 @@ export default function BraceletCustomiser() {
             {chosenStones.length > 0 && (
               <p className="mt-1 text-xs text-muted">
                 + {inr.format(SHIPPING_FEE)} shipping at checkout
-                {isCombo && " · combination price is the average of your stones"}
               </p>
             )}
           </div>

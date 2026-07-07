@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { products, SHIPPING_FEE } from "@/data/products";
-import { getStone } from "@/data/stones";
+import { SHIPPING_FEE } from "@/data/products";
+import { useCatalog } from "@/components/catalog-provider";
 import { useSelection } from "@/components/selection-provider";
 import {
   buildSelectionOrderLink,
+  toAbsoluteImageUrl,
   IS_WHATSAPP_PLACEHOLDER,
   type OrderLine,
   type CustomOrderLine,
@@ -30,6 +31,7 @@ export default function SelectionBar() {
     clear,
     count,
   } = useSelection();
+  const { getProduct, getStone } = useCatalog();
   const [open, setOpen] = useState(false);
 
   if (count === 0) return null;
@@ -37,7 +39,7 @@ export default function SelectionBar() {
   // Resolve selected ids back to full products for display + messaging.
   const lines: OrderLine[] = items
     .map((i) => {
-      const product = products.find((p) => p.id === i.productId);
+      const product = getProduct(i.productId);
       return product ? { product, size: i.size, qty: i.qty } : null;
     })
     .filter((l): l is OrderLine => l !== null);
@@ -70,7 +72,7 @@ export default function SelectionBar() {
       size: c.size,
       qty: c.qty,
       unitPrice: c.unitPrice,
-      imageUrls: c.stones.map((s) => `${origin}${s.image}`),
+      imageUrls: c.stones.map((s) => toAbsoluteImageUrl(s.image, origin)),
     }));
     const link = buildSelectionOrderLink(lines, customOrderLines, origin);
     window.open(link, "_blank", "noopener,noreferrer");
