@@ -6,11 +6,7 @@ import {
   type BraceletSizeId,
   type Product,
 } from "@/data/products";
-import {
-  buildProductOrderLink,
-  toAbsoluteImageUrl,
-  IS_WHATSAPP_PLACEHOLDER,
-} from "@/lib/whatsapp";
+import { buildProductOrderLink, toAbsoluteImageUrl } from "@/lib/whatsapp";
 import { useSelection } from "@/components/selection-provider";
 import { useToast } from "@/components/toast-provider";
 import SizeChart from "@/components/size-chart";
@@ -162,12 +158,6 @@ export default function ProductOrderPanel({ product }: { product: Product }) {
         )}
       </div>
 
-      {IS_WHATSAPP_PLACEHOLDER && (
-        <p className="mt-4 text-xs leading-5 text-muted">
-          Ordering opens a pre-filled WhatsApp message. The business number is a
-          placeholder until the WhatsApp Business account is live.
-        </p>
-      )}
     </div>
   );
 }
