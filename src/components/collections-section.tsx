@@ -1,8 +1,14 @@
-import { getAllProducts } from "@/sanity/queries";
+import { Suspense } from "react";
+
+import { getAllIntentions, getAllProducts } from "@/sanity/queries";
+import CollectionBrowser from "@/components/collection-browser";
 import ProductCard from "@/components/product-card";
 
 export default async function CollectionsSection() {
-  const products = await getAllProducts();
+  const [products, intentions] = await Promise.all([
+    getAllProducts(),
+    getAllIntentions(),
+  ]);
   return (
     <section id="collections" className="bg-background px-6 py-20">
       <div className="mx-auto max-w-6xl">
@@ -19,11 +25,20 @@ export default async function CollectionsSection() {
           </p>
         </div>
 
-        <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+        {/* useSearchParams (in CollectionBrowser) needs a Suspense boundary so
+            the rest of this static page can still be prerendered. The fallback
+            renders the full grid so the initial HTML shows every product. */}
+        <Suspense
+          fallback={
+            <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {products.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          }
+        >
+          <CollectionBrowser products={products} intentions={intentions} />
+        </Suspense>
       </div>
     </section>
   );

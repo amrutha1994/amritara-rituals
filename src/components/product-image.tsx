@@ -19,10 +19,10 @@ export default function ProductImage({
   return (
     <>
       {!loaded && (
-        <div className="absolute inset-0 z-10 grid place-items-center bg-surface">
+        <div className="img-shimmer absolute inset-0 z-10 grid place-items-center">
           <span
             aria-hidden
-            className="h-7 w-7 animate-spin rounded-full border-2 border-border border-t-primary"
+            className="h-9 w-9 animate-spin rounded-full border-[3px] border-primary-soft border-t-gold-antique"
           />
           <span className="sr-only">Loading image…</span>
         </div>

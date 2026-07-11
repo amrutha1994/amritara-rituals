@@ -115,6 +115,38 @@ body {
   animation: sheet-in 0.22s ease-out;
 }
 
+/* Image loading shimmer — a soft gilt sweep across a tinted surface */
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+.img-shimmer {
+  background-image: linear-gradient(
+    100deg,
+    var(--primary-soft) 30%,
+    rgba(227, 196, 120, 0.28) 50%,
+    var(--primary-soft) 70%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+/* Respect reduced-motion — hold a static tinted surface, no sweep or spin */
+@media (prefers-reduced-motion: reduce) {
+  .img-shimmer {
+    background-image: none;
+    background-color: var(--primary-soft);
+    animation: none;
+  }
+  .img-shimmer .animate-spin {
+    animation: none;
+  }
+}
+
 /* Soft dreamy gradient used behind the hero */
 .aura {
   background:
