@@ -1,11 +1,13 @@
 import { SHIPPING_FEE, type BraceletSizeId, type Product } from "@/data/products";
 
 // WhatsApp Business number in full international format: country code + number,
-// digits only (no '+', spaces, or dashes). India (+91) 9249041474.
-export const WHATSAPP_NUMBER = "919249041474";
-
-/** True while the number is still the placeholder, so the UI can hint at it. */
-export const IS_WHATSAPP_PLACEHOLDER = WHATSAPP_NUMBER === "919249041474";
+// digits only (no '+', spaces, or dashes). Configured via env so it lives with
+// the other deployment settings rather than in code — set
+// NEXT_PUBLIC_WHATSAPP_NUMBER (it must be NEXT_PUBLIC_* to reach the client
+// components that build order links). The fallback is the current live number,
+// so ordering still works if the env var isn't set.
+export const WHATSAPP_NUMBER =
+  process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "919249041474";
 
 /** Human-friendly version of the number, e.g. "+91 92490 41474". */
 export const WHATSAPP_DISPLAY = WHATSAPP_NUMBER.replace(

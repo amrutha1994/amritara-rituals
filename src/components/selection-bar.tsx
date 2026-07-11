@@ -7,7 +7,6 @@ import { useSelection } from "@/components/selection-provider";
 import {
   buildSelectionOrderLink,
   toAbsoluteImageUrl,
-  IS_WHATSAPP_PLACEHOLDER,
   type OrderLine,
   type CustomOrderLine,
 } from "@/lib/whatsapp";
@@ -241,13 +240,6 @@ export default function SelectionBar() {
             </div>
           </div>
 
-          {IS_WHATSAPP_PLACEHOLDER && (
-            <p className="mt-3 text-xs leading-5 text-muted">
-              Ordering opens a pre-filled WhatsApp message listing your bag.
-              The business number is a placeholder until WhatsApp Business is
-              live.
-            </p>
-          )}
         </div>
       )}
 
