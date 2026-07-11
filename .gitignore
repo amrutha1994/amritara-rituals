@@ -41,3 +41,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# one-off content migration scripts (already applied to Sanity)
+scripts/

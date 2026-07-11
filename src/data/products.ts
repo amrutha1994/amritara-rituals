@@ -1,3 +1,5 @@
+import type { IntentionId } from "@/data/intentions";
+
 /** Bracelet size identifiers (wrist-circumference based). */
 export type BraceletSizeId = "S" | "M" | "L";
 
@@ -57,6 +59,11 @@ export interface Product {
   images: string[];
   /** URL-friendly slug, e.g. for /collections/[slug] */
   slug: string;
+  /**
+   * The intention ids this bracelet serves (Sanity intention `key`s), seeded
+   * from its stone(s). Drives the collection filter. Empty until authored.
+   */
+  intentions: IntentionId[];
 }
 
 /**

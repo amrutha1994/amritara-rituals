@@ -66,6 +66,14 @@ export const productType = defineType({
       description: "Short metaphysical / wellbeing benefits, one per line.",
     }),
     defineField({
+      name: "intentions",
+      title: "Intentions",
+      type: "array",
+      of: [{ type: "reference", to: [{ type: "intention" }] }],
+      description:
+        "The intentions this bracelet serves — powers the collection filter. Seeded from its stone(s), but can be curated here.",
+    }),
+    defineField({
       name: "images",
       title: "Gallery images",
       type: "array",

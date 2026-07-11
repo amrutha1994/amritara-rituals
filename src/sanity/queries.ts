@@ -12,6 +12,28 @@ import { client } from "./client";
 // Fallback when an image asset is somehow missing — keeps the UI from breaking.
 const PLACEHOLDER_IMAGE = "/hero-banner.jpg";
 
+/**
+ * Rewrite a raw Sanity asset URL so the CDN delivers a right-sized, modern
+ * image instead of the multi-MB original:
+ *   - `auto=format` → serve WebP/AVIF when the browser accepts it
+ *   - `fit=max` + `w` → cap the width (never upscales), so we don't ship a
+ *     2000px original into a ~700px slot
+ *   - `q` → trim bytes at a quality that's visually lossless for photos
+ * This shrinks the source `next/image` has to fetch from megabytes to tens of
+ * KB, which is the real cause of slow product-image loads. Non-Sanity URLs
+ * (e.g. the local placeholder) pass through untouched.
+ */
+function sanityImage(url: string, width = 1200, quality = 75): string {
+  if (!url.startsWith("https://cdn.sanity.io/")) return url;
+  const params = new URLSearchParams({
+    auto: "format",
+    fit: "max",
+    w: String(width),
+    q: String(quality),
+  });
+  return `${url}?${params.toString()}`;
+}
+
 // Re-fetch from Sanity at most once every 60s (see the (site) layout's ISR).
 // Kept in sync with `export const revalidate` there.
 const REVALIDATE = 60;
@@ -28,6 +50,7 @@ const PRODUCTS_QUERY = `*[_type == "product"] | order(code asc){
   description,
   benefits,
   "slug": slug.current,
+  "intentions": intentions[]->key.current,
   "images": images[].asset->url
 }`;
 
@@ -40,11 +63,14 @@ interface RawProduct {
   description: string | null;
   benefits: string[] | null;
   slug: string;
+  intentions: (string | null)[] | null;
   images: (string | null)[] | null;
 }
 
 function mapProduct(r: RawProduct): Product {
-  const images = (r.images ?? []).filter((u): u is string => Boolean(u));
+  const images = (r.images ?? [])
+    .filter((u): u is string => Boolean(u))
+    .map((u) => sanityImage(u));
   const gallery = images.length ? images : [PLACEHOLDER_IMAGE];
   return {
     id: r.id,
@@ -58,6 +84,7 @@ function mapProduct(r: RawProduct): Product {
     image: gallery[0],
     images: gallery,
     slug: r.slug,
+    intentions: (r.intentions ?? []).filter((i): i is string => Boolean(i)),
   };
 }
 
@@ -107,7 +134,7 @@ function mapStone(r: RawStone): Stone {
     power: r.power ?? "",
     intentions: (r.intentions ?? []).filter((i): i is string => Boolean(i)),
     price: r.price,
-    image: r.image ?? PLACEHOLDER_IMAGE,
+    image: r.image ? sanityImage(r.image) : PLACEHOLDER_IMAGE,
     productId: r.productId ?? undefined,
   };
 }
