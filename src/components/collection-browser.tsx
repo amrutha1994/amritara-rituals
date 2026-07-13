@@ -1,7 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useMemo, useState } from "react";
 
 import type { Intention } from "@/data/intentions";
 import type { Product } from "@/data/products";
@@ -29,17 +28,11 @@ export default function CollectionBrowser({
   products: Product[];
   intentions: Intention[];
 }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-
-  // ── Current filter state (read from the URL) ──────────────────────────────
-  const selectedIntentions = (searchParams.get("intention") ?? "")
-    .split(",")
-    .filter(Boolean);
-  const selectedStone = searchParams.get("stone") ?? "";
-  const selectedPrice = searchParams.get("price") ?? "";
-  const sort = searchParams.get("sort") ?? "featured";
+  // ── Filter state (local — a click always re-renders) ──────────────────────
+  const [selectedIntentions, setSelectedIntentions] = useState<string[]>([]);
+  const [selectedStone, setSelectedStone] = useState("");
+  const [selectedPrice, setSelectedPrice] = useState("");
+  const [sort, setSort] = useState("featured");
 
   // ── Facet options (only offer values that actually exist) ─────────────────
   const intentionOptions = useMemo(
@@ -72,25 +65,16 @@ export default function CollectionBrowser({
   const hasFilters =
     selectedIntentions.length > 0 || Boolean(selectedStone) || Boolean(selectedPrice);
 
-  // ── URL helpers ───────────────────────────────────────────────────────────
-  function commit(next: URLSearchParams) {
-    const qs = next.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-  }
-  function setParam(key: string, value: string) {
-    const next = new URLSearchParams(searchParams.toString());
-    if (value) next.set(key, value);
-    else next.delete(key);
-    commit(next);
-  }
+  // ── Handlers ──────────────────────────────────────────────────────────────
   function toggleIntention(id: string) {
-    const set = new Set(selectedIntentions);
-    if (set.has(id)) set.delete(id);
-    else set.add(id);
-    setParam("intention", Array.from(set).join(","));
+    setSelectedIntentions((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
   }
   function clearAll() {
-    commit(new URLSearchParams());
+    setSelectedIntentions([]);
+    setSelectedStone("");
+    setSelectedPrice("");
   }
 
   const selectClass =
@@ -136,7 +120,7 @@ export default function CollectionBrowser({
             aria-label="Filter by stone"
             className={selectClass}
             value={selectedStone}
-            onChange={(e) => setParam("stone", e.target.value)}
+            onChange={(e) => setSelectedStone(e.target.value)}
           >
             <option value="">All stones</option>
             {stoneOptions.map((s) => (
@@ -150,7 +134,7 @@ export default function CollectionBrowser({
             aria-label="Filter by price"
             className={selectClass}
             value={selectedPrice}
-            onChange={(e) => setParam("price", e.target.value)}
+            onChange={(e) => setSelectedPrice(e.target.value)}
           >
             <option value="">Any price</option>
             {PRICE_BANDS.map((b) => (
@@ -164,7 +148,7 @@ export default function CollectionBrowser({
             aria-label="Sort"
             className={selectClass}
             value={sort}
-            onChange={(e) => setParam("sort", e.target.value === "featured" ? "" : e.target.value)}
+            onChange={(e) => setSort(e.target.value)}
           >
             {SORTS.map((s) => (
               <option key={s.id} value={s.id}>

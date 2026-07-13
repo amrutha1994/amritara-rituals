@@ -76,44 +76,46 @@ export default function Home() {
 
       {/* Bead size guide */}
       <section className="bg-surface px-6 py-20">
-        <div className="mx-auto grid max-w-5xl items-center gap-10 lg:grid-cols-2 lg:gap-14">
-          <div className="relative mx-auto w-full max-w-md overflow-hidden rounded-3xl border border-gold/30 shadow-[0_20px_60px_-32px_rgba(144,86,141,0.5)]">
-            <Image
-              src="/product6mm8mmhand.png"
-              alt="An amethyst bracelet in 6mm and 8mm beads worn together, showing the difference in bead size"
-              width={1081}
-              height={972}
-              sizes="(min-width: 1024px) 28rem, 100vw"
-              className="h-auto w-full object-cover"
-            />
-          </div>
-
-          <div>
+        <div className="mx-auto max-w-3xl">
+          {/* Heading on top */}
+          <div className="text-center">
             <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gold-antique">
               6mm or 8mm?
             </p>
             <h2 className="mt-4 font-display text-3xl font-medium text-foreground sm:text-4xl">
               Find your bead size
             </h2>
-            <p className="mt-4 text-base leading-8 text-muted">
+            <p className="mx-auto mt-4 max-w-xl text-base leading-8 text-muted">
               Our bracelets come in two bead sizes — 6mm and 8mm. Here&apos;s how
               each looks on the wrist, so you know what to expect.
             </p>
-
-            <dl className="mt-8 flex flex-col gap-5">
-              {BEAD_SIZES.map((b) => (
-                <div key={b.id} className="flex gap-4">
-                  <dt className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary-soft font-display text-lg font-medium text-primary-deep">
-                    {b.id}
-                  </dt>
-                  <dd>
-                    <p className="font-medium text-foreground">{b.headline}</p>
-                    <p className="mt-0.5 text-sm leading-6 text-muted">{b.note}</p>
-                  </dd>
-                </div>
-              ))}
-            </dl>
           </div>
+
+          {/* Image under the heading */}
+          <div className="relative mx-auto mt-10 w-full max-w-md overflow-hidden rounded-3xl border border-gold/30 shadow-[0_20px_60px_-32px_rgba(144,86,141,0.5)]">
+            <Image
+              src="/product6mm8mmhand.png"
+              alt="An amethyst bracelet in 6mm and 8mm beads worn together, showing the difference in bead size"
+              width={1081}
+              height={972}
+              sizes="(min-width: 768px) 28rem, 100vw"
+              className="h-auto w-full object-cover"
+            />
+          </div>
+
+          <dl className="mx-auto mt-10 grid max-w-xl gap-5 sm:grid-cols-2">
+            {BEAD_SIZES.map((b) => (
+              <div key={b.id} className="flex gap-4">
+                <dt className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary-soft font-display text-lg font-medium text-primary-deep">
+                  {b.id}
+                </dt>
+                <dd>
+                  <p className="font-medium text-foreground">{b.headline}</p>
+                  <p className="mt-0.5 text-sm leading-6 text-muted">{b.note}</p>
+                </dd>
+              </div>
+            ))}
+          </dl>
         </div>
       </section>
 
