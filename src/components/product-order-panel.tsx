@@ -7,6 +7,7 @@ import {
   type Product,
 } from "@/data/products";
 import { buildProductOrderLink, toAbsoluteImageUrl } from "@/lib/whatsapp";
+import { track } from "@/lib/analytics";
 import { useCatalog } from "@/components/catalog-provider";
 import { useSelection } from "@/components/selection-provider";
 import { useToast } from "@/components/toast-provider";
@@ -39,6 +40,13 @@ export default function ProductOrderPanel({ product }: { product: Product }) {
     // product photo so WhatsApp renders it as a preview. We build the href on
     // click so we can use the live origin (avoids a hydration mismatch).
     e.preventDefault();
+    track("whatsapp_order", {
+      type: "product",
+      id: product.id,
+      name: product.name,
+      size,
+      value: product.price,
+    });
     const imageUrl = toAbsoluteImageUrl(product.image, window.location.origin);
     window.open(
       buildProductOrderLink(product, size, delivery, imageUrl),
@@ -53,6 +61,13 @@ export default function ProductOrderPanel({ product }: { product: Product }) {
       return;
     }
     add(product.id, size);
+    track("add_to_bag", {
+      type: "product",
+      id: product.id,
+      name: product.name,
+      size,
+      value: product.price,
+    });
     show(`Added ${product.name} · Size ${size}`);
   };
 

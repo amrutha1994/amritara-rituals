@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { deliveryFeeFor } from "@/data/products";
+import { track } from "@/lib/analytics";
 import { useCatalog } from "@/components/catalog-provider";
 import { useSelection } from "@/components/selection-provider";
 import {
@@ -74,6 +75,7 @@ export default function SelectionBar() {
       unitPrice: c.unitPrice,
       imageUrls: c.stones.map((s) => toAbsoluteImageUrl(s.image, origin)),
     }));
+    track("whatsapp_order", { type: "bag", items: count, value: total });
     const link = buildSelectionOrderLink(lines, customOrderLines, delivery, origin);
     window.open(link, "_blank", "noopener,noreferrer");
   };

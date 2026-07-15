@@ -17,6 +17,7 @@ import {
   toAbsoluteImageUrl,
   type CustomOrderLine,
 } from "@/lib/whatsapp";
+import { track } from "@/lib/analytics";
 import { useCatalog } from "@/components/catalog-provider";
 import { useSelection } from "@/components/selection-provider";
 import { useToast } from "@/components/toast-provider";
@@ -121,6 +122,13 @@ export default function BraceletCustomiser({
   const handleAddToBag = () => {
     if (!validate() || !beadSize || !wrist) return;
     addCustom({ beadSize, stoneIds, size: wrist, qty, unitPrice });
+    track("add_to_bag", {
+      type: "custom",
+      bead_size: beadSize,
+      stones: stoneIds.length,
+      qty,
+      value: unitPrice * qty,
+    });
     show(
       qty > 1
         ? `${qty} custom bracelets added to your bag`
@@ -142,6 +150,14 @@ export default function BraceletCustomiser({
       unitPrice,
       imageUrls: chosenStones.map((s) => toAbsoluteImageUrl(s.image, origin)),
     };
+    track("whatsapp_order", {
+      type: "custom",
+      bead_size: beadSize,
+      stones: chosenStones.length,
+      size: wrist,
+      qty,
+      value: unitPrice * qty,
+    });
     window.open(buildCustomOrderLink(line, delivery), "_blank", "noopener,noreferrer");
   };
 
