@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { SHIPPING_FEE } from "@/data/products";
+import { deliveryFeeFor } from "@/data/products";
 import { useCatalog } from "@/components/catalog-provider";
 import { useSelection } from "@/components/selection-provider";
 import {
@@ -30,7 +30,7 @@ export default function SelectionBar() {
     clear,
     count,
   } = useSelection();
-  const { getProduct, getStone } = useCatalog();
+  const { getProduct, getStone, delivery } = useCatalog();
   const [open, setOpen] = useState(false);
 
   if (count === 0) return null;
@@ -59,6 +59,7 @@ export default function SelectionBar() {
   const total =
     lines.reduce((sum, l) => sum + l.product.price * l.qty, 0) +
     customLines.reduce((sum, c) => sum + c.unitPrice * c.qty, 0);
+  const deliveryFee = deliveryFeeFor(total, delivery);
   const noun = count === 1 ? "ritual" : "rituals";
 
   // Build the order link on click so we can use the live origin for the photo
@@ -73,7 +74,7 @@ export default function SelectionBar() {
       unitPrice: c.unitPrice,
       imageUrls: c.stones.map((s) => toAbsoluteImageUrl(s.image, origin)),
     }));
-    const link = buildSelectionOrderLink(lines, customOrderLines, origin);
+    const link = buildSelectionOrderLink(lines, customOrderLines, delivery, origin);
     window.open(link, "_blank", "noopener,noreferrer");
   };
 
@@ -224,19 +225,19 @@ export default function SelectionBar() {
             ))}
           </ul>
 
-          {/* Price breakdown — shipping is shown separately from the items. */}
+          {/* Price breakdown — delivery is shown separately from the items. */}
           <div className="mt-3 flex flex-col gap-1 border-t border-border pt-3 text-sm">
             <div className="flex items-center justify-between text-muted">
               <span>Subtotal</span>
               <span>{inr.format(total)}</span>
             </div>
             <div className="flex items-center justify-between text-muted">
-              <span>Shipping</span>
-              <span>{inr.format(SHIPPING_FEE)}</span>
+              <span>Delivery</span>
+              <span>{deliveryFee > 0 ? inr.format(deliveryFee) : "FREE"}</span>
             </div>
             <div className="flex items-center justify-between font-semibold text-foreground">
               <span>Total</span>
-              <span>{inr.format(total + SHIPPING_FEE)}</span>
+              <span>{inr.format(total + deliveryFee)}</span>
             </div>
           </div>
 

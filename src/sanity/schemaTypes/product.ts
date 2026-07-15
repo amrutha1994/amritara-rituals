@@ -3,7 +3,8 @@ import { defineField, defineType } from "sanity";
 /**
  * A ready-made bracelet in the catalogue. `code` is the stable SKU that appears
  * in WhatsApp orders (e.g. "AMT01"); `slug` drives /collections/[slug]. The
- * listed price is derived in code as `suggestedPrice − SHIPPING_FEE`.
+ * listed price shown on the storefront is exactly `suggestedPrice`; shipping is
+ * added as a separate line at order time.
  */
 export const productType = defineType({
   name: "product",
@@ -40,10 +41,10 @@ export const productType = defineType({
     }),
     defineField({
       name: "suggestedPrice",
-      title: "Suggested price (₹, incl. shipping)",
+      title: "Price (₹, ex-shipping)",
       type: "number",
       description:
-        "Final price including shipping. The listed price is this minus the shipping fee.",
+        "The price shown on the storefront, exactly as entered. Shipping is added as a separate line at order time.",
       validation: (r) => r.required().min(0),
     }),
     defineField({

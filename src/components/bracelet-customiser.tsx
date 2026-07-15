@@ -11,7 +11,7 @@ import {
   fromPrice,
   type BeadSize,
 } from "@/data/stones";
-import { BRACELET_SIZES, SHIPPING_FEE, type BraceletSizeId } from "@/data/products";
+import { BRACELET_SIZES, type BraceletSizeId } from "@/data/products";
 import {
   buildCustomOrderLink,
   toAbsoluteImageUrl,
@@ -67,7 +67,7 @@ export default function BraceletCustomiser({
   const [qty, setQty] = useState(1);
   const [error, setError] = useState<string | null>(null);
 
-  const { stones } = useCatalog();
+  const { stones, delivery } = useCatalog();
   const { addCustom } = useSelection();
   const { show } = useToast();
 
@@ -142,7 +142,7 @@ export default function BraceletCustomiser({
       unitPrice,
       imageUrls: chosenStones.map((s) => toAbsoluteImageUrl(s.image, origin)),
     };
-    window.open(buildCustomOrderLink(line), "_blank", "noopener,noreferrer");
+    window.open(buildCustomOrderLink(line, delivery), "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -408,7 +408,9 @@ export default function BraceletCustomiser({
             </div>
             {chosenStones.length > 0 && (
               <p className="mt-1 text-xs text-muted">
-                + {inr.format(SHIPPING_FEE)} shipping at checkout
+                {totalPrice >= delivery.freeThreshold
+                  ? "Free delivery at checkout"
+                  : `+ ${inr.format(delivery.charge)} delivery at checkout`}
               </p>
             )}
           </div>

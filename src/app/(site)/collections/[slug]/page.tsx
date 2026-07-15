@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { SHIPPING_FEE } from "@/data/products";
-import { getAllProducts, getProductBySlug } from "@/sanity/queries";
+import {
+  getAllProducts,
+  getDeliverySettings,
+  getProductBySlug,
+} from "@/sanity/queries";
 import ProductOrderPanel from "@/components/product-order-panel";
 import ProductGallery from "@/components/product-gallery";
 
@@ -34,7 +37,10 @@ export default async function ProductPage({
   params,
 }: PageProps<"/collections/[slug]">) {
   const { slug } = await params;
-  const product = await getProductBySlug(slug);
+  const [product, delivery] = await Promise.all([
+    getProductBySlug(slug),
+    getDeliverySettings(),
+  ]);
   if (!product) notFound();
 
   return (
@@ -67,7 +73,9 @@ export default async function ProductPage({
                 {inr.format(product.price)}
               </p>
               <p className="mt-1 text-sm text-muted">
-                + {inr.format(SHIPPING_FEE)} shipping at checkout
+                {product.price >= delivery.freeThreshold
+                  ? "Free delivery at checkout"
+                  : `+ ${inr.format(delivery.charge)} delivery at checkout`}
               </p>
 
               <p className="mt-6 text-base leading-8 text-muted">

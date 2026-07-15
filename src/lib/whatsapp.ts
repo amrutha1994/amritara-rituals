@@ -1,4 +1,9 @@
-import { SHIPPING_FEE, type BraceletSizeId, type Product } from "@/data/products";
+import {
+  deliveryFeeFor,
+  type BraceletSizeId,
+  type DeliverySettings,
+  type Product,
+} from "@/data/products";
 
 // WhatsApp Business number in full international format: country code + number,
 // digits only (no '+', spaces, or dashes). Configured via env so it lives with
@@ -23,6 +28,11 @@ const inr = new Intl.NumberFormat("en-IN", {
 
 function waLink(text: string): string {
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
+}
+
+/** The "Delivery:" order-summary line — shows the fee, or "FREE" when waived. */
+function deliveryLine(fee: number): string {
+  return `Delivery: ${fee > 0 ? inr.format(fee) : "FREE"}`;
 }
 
 /**
@@ -113,16 +123,18 @@ function customLineText(line: CustomOrderLine): string {
 export function buildProductOrderText(
   product: Product,
   size: BraceletSizeId,
+  delivery: DeliverySettings,
   imageUrl?: string,
 ): string {
+  const fee = deliveryFeeFor(product.price, delivery);
   return [
     "Hi Amritara Rituals!",
     "I'd like to order this ritual:",
     `• ${lineText({ product, size, qty: 1 })}`,
     ...(imageUrl ? ["", `Photo: ${imageUrl}`] : []),
     "",
-    `Shipping: ${inr.format(SHIPPING_FEE)}`,
-    `Total: ${inr.format(product.price + SHIPPING_FEE)}`,
+    deliveryLine(fee),
+    `Total: ${inr.format(product.price + fee)}`,
     "",
     "Could you help me complete the order?",
   ].join("\n");
@@ -132,28 +144,37 @@ export function buildProductOrderText(
 export function buildProductOrderLink(
   product: Product,
   size: BraceletSizeId,
+  delivery: DeliverySettings,
   imageUrl?: string,
 ): string {
-  return waLink(buildProductOrderText(product, size, imageUrl));
+  return waLink(buildProductOrderText(product, size, delivery, imageUrl));
 }
 
 /** The pre-filled message body for ordering one custom bracelet. */
-export function buildCustomOrderText(line: CustomOrderLine): string {
+export function buildCustomOrderText(
+  line: CustomOrderLine,
+  delivery: DeliverySettings,
+): string {
+  const subtotal = line.unitPrice * line.qty;
+  const fee = deliveryFeeFor(subtotal, delivery);
   return [
     "Hi Amritara Rituals!",
     "I'd like to order this custom bracelet:",
     `• ${customLineText(line)}`,
     "",
-    `Shipping: ${inr.format(SHIPPING_FEE)}`,
-    `Total: ${inr.format(line.unitPrice * line.qty + SHIPPING_FEE)}`,
+    deliveryLine(fee),
+    `Total: ${inr.format(subtotal + fee)}`,
     "",
     "Could you help me complete the order?",
   ].join("\n");
 }
 
 /** Deep link that opens WhatsApp pre-filled to order one custom bracelet. */
-export function buildCustomOrderLink(line: CustomOrderLine): string {
-  return waLink(buildCustomOrderText(line));
+export function buildCustomOrderLink(
+  line: CustomOrderLine,
+  delivery: DeliverySettings,
+): string {
+  return waLink(buildCustomOrderText(line, delivery));
 }
 
 /**
@@ -166,12 +187,14 @@ export function buildCustomOrderLink(line: CustomOrderLine): string {
  */
 export function buildSelectionOrderLink(
   lines: OrderLine[],
-  customLines: CustomOrderLine[] = [],
+  customLines: CustomOrderLine[],
+  delivery: DeliverySettings,
   origin?: string,
 ): string {
   const total =
     lines.reduce((sum, l) => sum + l.product.price * l.qty, 0) +
     customLines.reduce((sum, c) => sum + c.unitPrice * c.qty, 0);
+  const fee = deliveryFeeFor(total, delivery);
 
   // Continuous numbering across both kinds of line.
   let n = 0;
@@ -190,8 +213,8 @@ export function buildSelectionOrderLink(
     ...customRows,
     "",
     `Subtotal: ${inr.format(total)}`,
-    `Shipping: ${inr.format(SHIPPING_FEE)}`,
-    `Total: ${inr.format(total + SHIPPING_FEE)}`,
+    deliveryLine(fee),
+    `Total: ${inr.format(total + fee)}`,
     "Could you help me complete the order?",
   ].join("\n");
   return waLink(text);

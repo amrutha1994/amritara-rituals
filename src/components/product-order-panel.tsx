@@ -7,6 +7,7 @@ import {
   type Product,
 } from "@/data/products";
 import { buildProductOrderLink, toAbsoluteImageUrl } from "@/lib/whatsapp";
+import { useCatalog } from "@/components/catalog-provider";
 import { useSelection } from "@/components/selection-provider";
 import { useToast } from "@/components/toast-provider";
 import SizeChart from "@/components/size-chart";
@@ -23,6 +24,7 @@ export default function ProductOrderPanel({ product }: { product: Product }) {
   const [size, setSize] = useState<BraceletSizeId | null>(null);
   const [error, setError] = useState(false);
   const { add, decrement, qtyOf } = useSelection();
+  const { delivery } = useCatalog();
   const { show } = useToast();
 
   const qty = size ? qtyOf(product.id, size) : 0;
@@ -39,7 +41,7 @@ export default function ProductOrderPanel({ product }: { product: Product }) {
     e.preventDefault();
     const imageUrl = toAbsoluteImageUrl(product.image, window.location.origin);
     window.open(
-      buildProductOrderLink(product, size, imageUrl),
+      buildProductOrderLink(product, size, delivery, imageUrl),
       "_blank",
       "noopener,noreferrer",
     );
