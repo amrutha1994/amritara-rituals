@@ -39,9 +39,9 @@ export interface Product {
   /** Primary gemstone */
   stone: string;
   /**
-   * Listed price in INR — what the storefront shows. Derived from the Sanity
-   * `suggestedPrice` as `suggestedPrice − SHIPPING_FEE`; shipping is added back
-   * as a separate line at order time.
+   * Listed price in INR — what the storefront shows. This is exactly the Sanity
+   * `suggestedPrice`; delivery (see `DeliverySettings`) is added as a separate
+   * line at order time when the order subtotal is below the free threshold.
    */
   price: number;
   /** One-line intention / purpose */
@@ -67,11 +67,31 @@ export interface Product {
 }
 
 /**
- * Flat shipping charge (INR), kept separate from the listed price and added as
- * its own line at order time. The Sanity `suggestedPrice` folds ₹70 shipping in,
- * so the listed price subtracts it back out.
+ * The delivery rule, editable in Sanity (see the `settings` singleton) so prices
+ * can change without a deploy: an order whose subtotal is below `freeThreshold`
+ * pays a flat `charge`; at or above it, delivery is free.
  */
-export const SHIPPING_FEE = 70;
+export interface DeliverySettings {
+  /** Flat delivery fee (INR) for orders below the free-delivery threshold. */
+  charge: number;
+  /** Subtotal (INR) at or above which delivery is free. */
+  freeThreshold: number;
+}
+
+/**
+ * Fallback used until the Sanity `settings` document is created (or if it can't
+ * be fetched), so ordering never breaks. Mirrors the schema's initial values.
+ */
+export const DEFAULT_DELIVERY: DeliverySettings = { charge: 50, freeThreshold: 700 };
+
+/**
+ * Delivery fee for an order subtotal: the flat `charge` while under the
+ * threshold, free once the subtotal reaches it. An empty order (subtotal 0)
+ * pays nothing.
+ */
+export function deliveryFeeFor(subtotal: number, d: DeliverySettings): number {
+  return subtotal > 0 && subtotal < d.freeThreshold ? d.charge : 0;
+}
 
 /** Look up a product by its stable tracking code / id within a fetched list. */
 export function getProduct(

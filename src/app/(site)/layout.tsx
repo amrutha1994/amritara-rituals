@@ -1,3 +1,5 @@
+import { GoogleAnalytics } from "@next/third-parties/google";
+
 import LaunchBanner from "@/components/launch-banner";
 import SiteHeader from "@/components/site-header";
 import SiteFooter from "@/components/site-footer";
@@ -6,6 +8,7 @@ import { ToastProvider } from "@/components/toast-provider";
 import { ProductSheetProvider } from "@/components/product-sheet-provider";
 import { CatalogProvider } from "@/components/catalog-provider";
 import SelectionBar from "@/components/selection-bar";
+import { GA_ID, analyticsEnabled } from "@/lib/analytics";
 import { getCatalog } from "@/sanity/queries";
 
 /**
@@ -42,6 +45,10 @@ export default async function SiteLayout({
           </ProductSheetProvider>
         </SelectionProvider>
       </ToastProvider>
+      {/* Storefront-only analytics (excludes /studio). GA4 auto-tracks
+          pageviews; custom events are sent via lib/analytics `track`. Rendered
+          only when a measurement ID is configured. */}
+      {analyticsEnabled && <GoogleAnalytics gaId={GA_ID} />}
     </CatalogProvider>
   );
 }

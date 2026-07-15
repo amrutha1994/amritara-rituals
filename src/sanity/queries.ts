@@ -3,8 +3,7 @@ import "server-only";
 import { cache } from "react";
 
 import type { Intention } from "@/data/intentions";
-import type { Product } from "@/data/products";
-import { SHIPPING_FEE } from "@/data/products";
+import { DEFAULT_DELIVERY, type DeliverySettings, type Product } from "@/data/products";
 import type { Stone } from "@/data/stones";
 
 import { client } from "./client";
@@ -76,8 +75,9 @@ function mapProduct(r: RawProduct): Product {
     id: r.id,
     name: r.name,
     stone: r.stone ?? "",
-    // Listed price = the sheet's suggested price minus the separate shipping fee.
-    price: r.suggestedPrice - SHIPPING_FEE,
+    // Listed price = exactly the Sanity price; delivery is added on top at order
+    // time only when the order subtotal is below the free-delivery threshold.
+    price: r.suggestedPrice,
     shortIntention: r.shortIntention ?? "",
     description: r.description ?? "",
     benefits: r.benefits ?? undefined,
@@ -180,20 +180,50 @@ export const getAllIntentions = cache(async (): Promise<Intention[]> => {
   return raw.map(mapIntention);
 });
 
+// ── Settings ─────────────────────────────────────────────────────────────────
+
+const SETTINGS_QUERY = `*[_type == "settings"][0]{
+  deliveryCharge,
+  freeDeliveryThreshold
+}`;
+
+interface RawSettings {
+  deliveryCharge: number | null;
+  freeDeliveryThreshold: number | null;
+}
+
+/**
+ * The delivery rule from the Sanity `settings` singleton, falling back to
+ * DEFAULT_DELIVERY until that document is created (so ordering never breaks).
+ */
+export const getDeliverySettings = cache(async (): Promise<DeliverySettings> => {
+  const raw = await client.fetch<RawSettings | null>(
+    SETTINGS_QUERY,
+    {},
+    fetchOptions,
+  );
+  return {
+    charge: raw?.deliveryCharge ?? DEFAULT_DELIVERY.charge,
+    freeThreshold: raw?.freeDeliveryThreshold ?? DEFAULT_DELIVERY.freeThreshold,
+  };
+});
+
 // ── Combined ─────────────────────────────────────────────────────────────────
 
 export interface Catalog {
   products: Product[];
   stones: Stone[];
   intentions: Intention[];
+  delivery: DeliverySettings;
 }
 
 /** The whole catalogue in one call — used to hydrate the client catalog context. */
 export const getCatalog = cache(async (): Promise<Catalog> => {
-  const [products, stones, intentions] = await Promise.all([
+  const [products, stones, intentions, delivery] = await Promise.all([
     getAllProducts(),
     getAllStones(),
     getAllIntentions(),
+    getDeliverySettings(),
   ]);
-  return { products, stones, intentions };
+  return { products, stones, intentions, delivery };
 });

@@ -19,7 +19,25 @@ export default defineConfig({
   dataset,
   schema: { types: schemaTypes },
   plugins: [
-    structureTool(),
+    structureTool({
+      // Pin "Settings" as a single fixed document (the delivery rule etc.), and
+      // list the normal content types below it.
+      structure: (S) =>
+        S.list()
+          .title("Content")
+          .items([
+            S.listItem()
+              .title("Settings")
+              .id("settings")
+              .child(
+                S.document().schemaType("settings").documentId("settings"),
+              ),
+            S.divider(),
+            ...S.documentTypeListItems().filter(
+              (item) => item.getId() !== "settings",
+            ),
+          ]),
+    }),
     visionTool({ defaultApiVersion: apiVersion }),
   ],
 });

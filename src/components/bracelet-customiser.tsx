@@ -11,12 +11,13 @@ import {
   fromPrice,
   type BeadSize,
 } from "@/data/stones";
-import { BRACELET_SIZES, SHIPPING_FEE, type BraceletSizeId } from "@/data/products";
+import { BRACELET_SIZES, type BraceletSizeId } from "@/data/products";
 import {
   buildCustomOrderLink,
   toAbsoluteImageUrl,
   type CustomOrderLine,
 } from "@/lib/whatsapp";
+import { track } from "@/lib/analytics";
 import { useCatalog } from "@/components/catalog-provider";
 import { useSelection } from "@/components/selection-provider";
 import { useToast } from "@/components/toast-provider";
@@ -67,7 +68,7 @@ export default function BraceletCustomiser({
   const [qty, setQty] = useState(1);
   const [error, setError] = useState<string | null>(null);
 
-  const { stones } = useCatalog();
+  const { stones, delivery } = useCatalog();
   const { addCustom } = useSelection();
   const { show } = useToast();
 
@@ -121,6 +122,13 @@ export default function BraceletCustomiser({
   const handleAddToBag = () => {
     if (!validate() || !beadSize || !wrist) return;
     addCustom({ beadSize, stoneIds, size: wrist, qty, unitPrice });
+    track("add_to_bag", {
+      type: "custom",
+      bead_size: beadSize,
+      stones: stoneIds.length,
+      qty,
+      value: unitPrice * qty,
+    });
     show(
       qty > 1
         ? `${qty} custom bracelets added to your bag`
@@ -142,7 +150,15 @@ export default function BraceletCustomiser({
       unitPrice,
       imageUrls: chosenStones.map((s) => toAbsoluteImageUrl(s.image, origin)),
     };
-    window.open(buildCustomOrderLink(line), "_blank", "noopener,noreferrer");
+    track("whatsapp_order", {
+      type: "custom",
+      bead_size: beadSize,
+      stones: chosenStones.length,
+      size: wrist,
+      qty,
+      value: unitPrice * qty,
+    });
+    window.open(buildCustomOrderLink(line, delivery), "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -408,7 +424,9 @@ export default function BraceletCustomiser({
             </div>
             {chosenStones.length > 0 && (
               <p className="mt-1 text-xs text-muted">
-                + {inr.format(SHIPPING_FEE)} shipping at checkout
+                {totalPrice >= delivery.freeThreshold
+                  ? "Free delivery at checkout"
+                  : `+ ${inr.format(delivery.charge)} delivery at checkout`}
               </p>
             )}
           </div>
