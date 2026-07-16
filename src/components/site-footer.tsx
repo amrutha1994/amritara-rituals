@@ -8,9 +8,7 @@ const FOOTER_NAV = [
 ] as const;
 
 const SOCIAL = [
-  { label: "Instagram", href: "#" },
-  { label: "Facebook", href: "#" },
-  { label: "Pinterest", href: "#" },
+  { label: "Instagram", href: "https://www.instagram.com/amritararituals/" },
 ] as const;
 
 export default function SiteFooter() {
@@ -59,12 +57,14 @@ export default function SiteFooter() {
             <ul className="mt-4 flex flex-col gap-2.5">
               {SOCIAL.map((link) => (
                 <li key={link.label}>
-                  <Link
+                  <a
                     href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-sm text-foreground/75 transition-colors hover:text-primary"
                   >
                     {link.label}
-                  </Link>
+                  </a>
                 </li>
               ))}
             </ul>

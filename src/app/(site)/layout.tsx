@@ -1,6 +1,5 @@
 import { GoogleAnalytics } from "@next/third-parties/google";
 
-import LaunchBanner from "@/components/launch-banner";
 import SiteHeader from "@/components/site-header";
 import SiteFooter from "@/components/site-footer";
 import { SelectionProvider } from "@/components/selection-provider";
@@ -36,8 +35,6 @@ export default async function SiteLayout({
       <ToastProvider>
         <SelectionProvider>
           <ProductSheetProvider>
-            {/* TEMPORARY launch notice — remove with the component when live */}
-            <LaunchBanner />
             <SiteHeader />
             <div className="flex flex-1 flex-col">{children}</div>
             <SiteFooter />
