@@ -29,7 +29,11 @@ export function track(name: AnalyticsEvent, params?: EventParams): void {
 /**
  * The custom events we record. Kept as a closed set so event names stay
  * consistent between where they're sent and how they're read in GA.
- *   - `whatsapp_order`  — clicked "Order on WhatsApp" (the key conversion)
- *   - `add_to_bag`      — added an item to the bag
+ *   - `whatsapp_order`    — clicked "Order on WhatsApp" (the key conversion)
+ *   - `whatsapp_preorder` — clicked "Pre-order" on a sold-out product (demand signal)
+ *   - `add_to_bag`        — added an item to the bag
  */
-export type AnalyticsEvent = "whatsapp_order" | "add_to_bag";
+export type AnalyticsEvent =
+  | "whatsapp_order"
+  | "whatsapp_preorder"
+  | "add_to_bag";

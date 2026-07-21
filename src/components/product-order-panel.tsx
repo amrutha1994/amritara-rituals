@@ -3,10 +3,16 @@
 import { useState } from "react";
 import {
   BRACELET_SIZES,
+  isSoldOut,
+  stockLabel,
   type BraceletSizeId,
   type Product,
 } from "@/data/products";
-import { buildProductOrderLink, toAbsoluteImageUrl } from "@/lib/whatsapp";
+import {
+  buildPreOrderLink,
+  buildProductOrderLink,
+  toAbsoluteImageUrl,
+} from "@/lib/whatsapp";
 import { track } from "@/lib/analytics";
 import { useCatalog } from "@/components/catalog-provider";
 import { useSelection } from "@/components/selection-provider";
@@ -77,8 +83,45 @@ export default function ProductOrderPanel({ product }: { product: Product }) {
     show(`Removed ${product.name} · Size ${size}`);
   };
 
+  // Sold out → pre-order instead of order: same size choice, but the message is
+  // an intent-to-buy so the owner can gauge demand and restock accordingly.
+  const handlePreOrder = () => {
+    if (!size) {
+      setError(true);
+      return;
+    }
+    track("whatsapp_preorder", {
+      type: "product",
+      id: product.id,
+      name: product.name,
+      size,
+      value: product.price,
+    });
+    const imageUrl = toAbsoluteImageUrl(product.image, window.location.origin);
+    window.open(
+      buildPreOrderLink(product, size, imageUrl),
+      "_blank",
+      "noopener,noreferrer",
+    );
+  };
+
+  const soldOut = isSoldOut(product);
+  const stock = stockLabel(product);
+
   return (
     <div className="mt-8">
+      {/* Status note — "Sold out" when tracked & empty, else "Only N left". */}
+      {soldOut ? (
+        <p className="mb-4 inline-flex items-center gap-1.5 rounded-full bg-border/40 px-3 py-1 text-xs font-semibold uppercase tracking-[0.15em] text-muted">
+          Sold out
+        </p>
+      ) : stock ? (
+        <p className="mb-4 inline-flex items-center gap-1.5 rounded-full bg-primary-soft px-3 py-1 text-xs font-medium text-primary-deep">
+          <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-primary" />
+          {stock}
+        </p>
+      ) : null}
+
       {/* Size selection */}
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-foreground">
@@ -126,55 +169,76 @@ export default function ProductOrderPanel({ product }: { product: Product }) {
         </p>
       )}
 
-      {/* Actions */}
-      <div className="mt-6 flex flex-col gap-3">
-        <button
-          type="button"
-          onClick={handleOrder}
-          aria-disabled={!size}
-          className={`flex items-center justify-center gap-2 rounded-full px-7 py-3.5 text-center text-sm font-medium text-white shadow-sm ring-1 ring-gold-light/30 transition-colors ${
-            size
-              ? "bg-primary hover:bg-primary-deep"
-              : "cursor-not-allowed bg-primary/50"
-          }`}
-        >
-          <WhatsAppIcon className="h-5 w-5" />
-          Order on WhatsApp
-        </button>
-
-        {qty === 0 ? (
+      {/* Actions — sold-out products offer a pre-order instead of order/add. */}
+      {soldOut ? (
+        <div className="mt-6 flex flex-col gap-2">
           <button
             type="button"
-            onClick={handleAdd}
-            className="rounded-full border border-border bg-surface px-7 py-3 text-center text-sm font-medium text-primary-deep transition-colors hover:border-primary"
+            onClick={handlePreOrder}
+            aria-disabled={!size}
+            className={`flex items-center justify-center gap-2 rounded-full px-7 py-3.5 text-center text-sm font-medium text-white shadow-sm ring-1 ring-gold-light/30 transition-colors ${
+              size
+                ? "bg-primary hover:bg-primary-deep"
+                : "cursor-not-allowed bg-primary/50"
+            }`}
           >
-            Add to bag
+            <WhatsAppIcon className="h-5 w-5" />
+            Pre-order on WhatsApp
           </button>
-        ) : (
-          <div className="flex items-center justify-between gap-3 rounded-full border border-primary bg-primary-soft px-3 py-2">
-            <button
-              type="button"
-              onClick={handleDecrement}
-              aria-label="Remove one from your bag"
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-surface text-lg text-primary-deep shadow-sm transition-colors hover:bg-primary hover:text-white"
-            >
-              −
-            </button>
-            <span className="text-sm font-medium text-primary-deep">
-              {qty} in your bag
-            </span>
+          <p className="text-center text-xs text-muted">
+            Currently sold out — pre-order and we&apos;ll reserve one for you on
+            the next batch.
+          </p>
+        </div>
+      ) : (
+        <div className="mt-6 flex flex-col gap-3">
+          <button
+            type="button"
+            onClick={handleOrder}
+            aria-disabled={!size}
+            className={`flex items-center justify-center gap-2 rounded-full px-7 py-3.5 text-center text-sm font-medium text-white shadow-sm ring-1 ring-gold-light/30 transition-colors ${
+              size
+                ? "bg-primary hover:bg-primary-deep"
+                : "cursor-not-allowed bg-primary/50"
+            }`}
+          >
+            <WhatsAppIcon className="h-5 w-5" />
+            Order on WhatsApp
+          </button>
+
+          {qty === 0 ? (
             <button
               type="button"
               onClick={handleAdd}
-              aria-label="Add one to your bag"
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-surface text-lg text-primary-deep shadow-sm transition-colors hover:bg-primary hover:text-white"
+              className="rounded-full border border-border bg-surface px-7 py-3 text-center text-sm font-medium text-primary-deep transition-colors hover:border-primary"
             >
-              +
+              Add to bag
             </button>
-          </div>
-        )}
-      </div>
-
+          ) : (
+            <div className="flex items-center justify-between gap-3 rounded-full border border-primary bg-primary-soft px-3 py-2">
+              <button
+                type="button"
+                onClick={handleDecrement}
+                aria-label="Remove one from your bag"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-surface text-lg text-primary-deep shadow-sm transition-colors hover:bg-primary hover:text-white"
+              >
+                −
+              </button>
+              <span className="text-sm font-medium text-primary-deep">
+                {qty} in your bag
+              </span>
+              <button
+                type="button"
+                onClick={handleAdd}
+                aria-label="Add one to your bag"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-surface text-lg text-primary-deep shadow-sm transition-colors hover:bg-primary hover:text-white"
+              >
+                +
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

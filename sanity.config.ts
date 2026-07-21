@@ -5,6 +5,7 @@
  * products, stones and intentions here; the storefront reads the same data
  * through `src/sanity/client.ts`.
  */
+import { orderableDocumentListDeskItem } from "@sanity/orderable-document-list";
 import { visionTool } from "@sanity/vision";
 import { defineConfig } from "sanity";
 import { structureTool } from "sanity/structure";
@@ -20,9 +21,9 @@ export default defineConfig({
   schema: { types: schemaTypes },
   plugins: [
     structureTool({
-      // Pin "Settings" as a single fixed document (the delivery rule etc.), and
-      // list the normal content types below it.
-      structure: (S) =>
+      // Pin "Settings" as a single fixed document (the delivery rule etc.),
+      // give products a drag-to-reorder list, and show the rest normally.
+      structure: (S, context) =>
         S.list()
           .title("Content")
           .items([
@@ -33,8 +34,17 @@ export default defineConfig({
                 S.document().schemaType("settings").documentId("settings"),
               ),
             S.divider(),
+            orderableDocumentListDeskItem({
+              type: "product",
+              title: "Products (ordered)",
+              S,
+              context,
+            }),
+            S.divider(),
+            // Everything else (stones, intentions) as default lists — but not
+            // settings (pinned above) or product (the orderable list above).
             ...S.documentTypeListItems().filter(
-              (item) => item.getId() !== "settings",
+              (item) => !["settings", "product"].includes(item.getId() ?? ""),
             ),
           ]),
     }),

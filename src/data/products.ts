@@ -44,6 +44,13 @@ export interface Product {
    * line at order time when the order subtotal is below the free threshold.
    */
   price: number;
+  /**
+   * Units left in stock (Sanity `remainingQuantity`). Optional:
+   *   - `undefined` → stock not tracked; always orderable, nothing shown
+   *   - `0` → sold out; ordering is disabled
+   *   - `> 0` → shown to shoppers as "Only N left"
+   */
+  remainingQuantity?: number;
   /** One-line intention / purpose */
   shortIntention: string;
   /** Longer descriptive copy */
@@ -64,6 +71,30 @@ export interface Product {
    * from its stone(s). Drives the collection filter. Empty until authored.
    */
   intentions: IntentionId[];
+}
+
+/** Stock state derived from a product's optional `remainingQuantity`. */
+export type StockStatus = "untracked" | "in_stock" | "sold_out";
+
+export function stockStatus(product: Product): StockStatus {
+  if (product.remainingQuantity == null) return "untracked";
+  return product.remainingQuantity <= 0 ? "sold_out" : "in_stock";
+}
+
+/** True when stock is tracked and none remain — ordering should be blocked. */
+export function isSoldOut(product: Product): boolean {
+  return stockStatus(product) === "sold_out";
+}
+
+/**
+ * Short shopper-facing stock note, or `null` when nothing should be shown
+ * (stock untracked, or sold out — the "Sold out" state is handled separately).
+ * Low counts read as urgency ("Only 2 left"); larger counts stay factual.
+ */
+export function stockLabel(product: Product): string | null {
+  if (stockStatus(product) !== "in_stock") return null;
+  const n = product.remainingQuantity as number;
+  return n <= 5 ? `Only ${n} left` : `${n} in stock`;
 }
 
 /**

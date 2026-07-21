@@ -1,3 +1,7 @@
+import {
+  orderRankField,
+  orderRankOrdering,
+} from "@sanity/orderable-document-list";
 import { defineField, defineType } from "sanity";
 
 /**
@@ -5,12 +9,20 @@ import { defineField, defineType } from "sanity";
  * in WhatsApp orders (e.g. "AMT01"); `slug` drives /collections/[slug]. The
  * listed price shown on the storefront is exactly `suggestedPrice`; shipping is
  * added as a separate line at order time.
+ *
+ * Display order is manual: the hidden `orderRank` field (see the "Products
+ * (ordered)" list in the Studio) is set by drag-and-drop and drives the
+ * storefront sort. New products are appended to the end automatically.
  */
 export const productType = defineType({
   name: "product",
   title: "Product (Bracelet)",
   type: "document",
+  orderings: [orderRankOrdering],
   fields: [
+    // Hidden field that stores the drag-and-drop position; kept first so it
+    // never clutters the form.
+    orderRankField({ type: "product" }),
     defineField({
       name: "name",
       title: "Name",
@@ -46,6 +58,14 @@ export const productType = defineType({
       description:
         "The price shown on the storefront, exactly as entered. Shipping is added as a separate line at order time.",
       validation: (r) => r.required().min(0),
+    }),
+    defineField({
+      name: "remainingQuantity",
+      title: "Remaining quantity (stock)",
+      type: "number",
+      description:
+        "How many of this bracelet are left. Leave blank if you're not tracking stock for it (always orderable). Set to 0 to show it as Sold out.",
+      validation: (r) => r.min(0).integer(),
     }),
     defineField({
       name: "shortIntention",

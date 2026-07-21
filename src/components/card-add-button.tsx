@@ -1,6 +1,6 @@
 "use client";
 
-import type { Product } from "@/data/products";
+import { isSoldOut, type Product } from "@/data/products";
 import { useProductSheet } from "@/components/product-sheet-provider";
 import { useSelection } from "@/components/selection-provider";
 
@@ -13,6 +13,19 @@ export default function CardAddButton({ product }: { product: Product }) {
   const { productQty } = useSelection();
   const qty = productQty(product.id);
   const selected = qty > 0;
+
+  if (isSoldOut(product)) {
+    return (
+      <button
+        type="button"
+        onClick={() => open(product)}
+        aria-label={`Pre-order ${product.name} (sold out)`}
+        className="rounded-full border border-primary/40 px-4 py-2 text-sm font-medium text-primary-deep transition-colors hover:border-primary hover:bg-primary-soft"
+      >
+        Pre-order
+      </button>
+    );
+  }
 
   return (
     <button
