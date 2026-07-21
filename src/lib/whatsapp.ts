@@ -150,6 +150,36 @@ export function buildProductOrderLink(
   return waLink(buildProductOrderText(product, size, delivery, imageUrl));
 }
 
+/**
+ * The pre-filled message body for PRE-ORDERING a sold-out product. Framed as
+ * intent-to-buy rather than a live order: no delivery/total (those are settled
+ * when it's back in stock), just the item and a request to reserve one. Helps
+ * the owner gauge demand and restock accordingly.
+ */
+export function buildPreOrderText(
+  product: Product,
+  size: BraceletSizeId,
+  imageUrl?: string,
+): string {
+  return [
+    "Hi Amritara Rituals!",
+    "This ritual is sold out — I'd like to pre-order it:",
+    `• ${lineText({ product, size, qty: 1 })}`,
+    ...(imageUrl ? ["", `Photo: ${imageUrl}`] : []),
+    "",
+    "Could you let me know when it's back and reserve one for me?",
+  ].join("\n");
+}
+
+/** Deep link that opens WhatsApp pre-filled to pre-order a sold-out product. */
+export function buildPreOrderLink(
+  product: Product,
+  size: BraceletSizeId,
+  imageUrl?: string,
+): string {
+  return waLink(buildPreOrderText(product, size, imageUrl));
+}
+
 /** The pre-filled message body for ordering one custom bracelet. */
 export function buildCustomOrderText(
   line: CustomOrderLine,

@@ -40,11 +40,12 @@ const fetchOptions = { next: { revalidate: REVALIDATE } };
 
 // ── Products ─────────────────────────────────────────────────────────────────
 
-const PRODUCTS_QUERY = `*[_type == "product"] | order(code asc){
+const PRODUCTS_QUERY = `*[_type == "product"] | order(orderRank asc){
   "id": code,
   name,
   stone,
   suggestedPrice,
+  remainingQuantity,
   shortIntention,
   description,
   benefits,
@@ -58,6 +59,7 @@ interface RawProduct {
   name: string;
   stone: string | null;
   suggestedPrice: number;
+  remainingQuantity: number | null;
   shortIntention: string | null;
   description: string | null;
   benefits: string[] | null;
@@ -78,6 +80,7 @@ function mapProduct(r: RawProduct): Product {
     // Listed price = exactly the Sanity price; delivery is added on top at order
     // time only when the order subtotal is below the free-delivery threshold.
     price: r.suggestedPrice,
+    remainingQuantity: r.remainingQuantity ?? undefined,
     shortIntention: r.shortIntention ?? "",
     description: r.description ?? "",
     benefits: r.benefits ?? undefined,
