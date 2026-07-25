@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { isSoldOut, stockLabel, type Product } from "@/data/products";
+import { hasOffer, isSoldOut, stockLabel, type Product } from "@/data/products";
 import CardAddButton from "@/components/card-add-button";
 import ProductImage from "@/components/product-image";
 
@@ -13,6 +13,7 @@ export default function ProductCard({ product }: { product: Product }) {
   const href = `/collections/${product.slug}`;
   const soldOut = isSoldOut(product);
   const stock = stockLabel(product);
+  const onOffer = hasOffer(product);
 
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-[0_10px_30px_-18px_rgba(144,86,141,0.4)] transition-all hover:-translate-y-1 hover:shadow-[0_18px_40px_-18px_rgba(144,86,141,0.55)]">
@@ -35,10 +36,16 @@ export default function ProductCard({ product }: { product: Product }) {
         <span className="absolute left-3 top-3 rounded-full border border-gold/40 bg-surface/85 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.15em] text-gold-antique backdrop-blur-sm">
           {product.stone}
         </span>
-        {soldOut && (
+        {soldOut ? (
           <span className="absolute right-3 top-3 rounded-full bg-foreground/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.15em] text-white backdrop-blur-sm">
             Sold out
           </span>
+        ) : (
+          onOffer && (
+            <span className="absolute right-3 top-3 rounded-full bg-primary px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.15em] text-white shadow-sm">
+              {product.offerPercent}% off
+            </span>
+          )
         )}
       </Link>
 
@@ -59,8 +66,15 @@ export default function ProductCard({ product }: { product: Product }) {
 
       {/* Footer action row — its own stacking layer, above the links */}
       <div className="relative z-10 mt-auto flex items-center justify-between gap-3 px-5 pb-5 pt-1">
-        <span className="text-base font-semibold text-primary-deep">
-          {inr.format(product.price)}
+        <span className="flex items-baseline gap-2">
+          <span className="text-base font-semibold text-primary-deep">
+            {inr.format(product.price)}
+          </span>
+          {onOffer && (
+            <span className="text-sm text-muted line-through">
+              {inr.format(product.originalPrice)}
+            </span>
+          )}
         </span>
         <CardAddButton product={product} />
       </div>

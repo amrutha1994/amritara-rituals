@@ -39,11 +39,23 @@ export interface Product {
   /** Primary gemstone */
   stone: string;
   /**
-   * Listed price in INR — what the storefront shows. This is exactly the Sanity
-   * `suggestedPrice`; delivery (see `DeliverySettings`) is added as a separate
-   * line at order time when the order subtotal is below the free threshold.
+   * Effective price in INR — what the shopper actually pays and what every
+   * total is computed from. Equals `originalPrice` when there's no offer, or the
+   * discounted price (rounded to the rupee) when `offerPercent > 0`. Delivery
+   * (see `DeliverySettings`) is added as a separate line at order time when the
+   * order subtotal is below the free threshold.
    */
   price: number;
+  /**
+   * The regular price before any offer (Sanity `suggestedPrice`). Shown as a
+   * struck-through reference next to `price` only when an offer is active.
+   */
+  originalPrice: number;
+  /**
+   * Discount percentage configured in Sanity (`offerPercent`). `0` means no
+   * offer — `price` then equals `originalPrice`.
+   */
+  offerPercent: number;
   /**
    * Units left in stock (Sanity `remainingQuantity`). Optional:
    *   - `undefined` → stock not tracked; always orderable, nothing shown
@@ -116,12 +128,48 @@ export interface DeliverySettings {
 export const DEFAULT_DELIVERY: DeliverySettings = { charge: 50, freeThreshold: 700 };
 
 /**
+ * The site-wide announcement banner, editable in the Sanity `settings` singleton
+ * so promo copy (e.g. a launch-month offer) can be shown, changed, or hidden
+ * without a deploy. The banner only renders when `enabled` is true and `text`
+ * is non-empty.
+ */
+export interface Announcement {
+  /** Whether the banner strip should be shown at all. */
+  enabled: boolean;
+  /** The message displayed in the banner. */
+  text: string;
+}
+
+/** Fallback until the `settings` document is created: banner hidden. */
+export const DEFAULT_ANNOUNCEMENT: Announcement = { enabled: false, text: "" };
+
+/**
  * Delivery fee for an order subtotal: the flat `charge` while under the
  * threshold, free once the subtotal reaches it. An empty order (subtotal 0)
  * pays nothing.
  */
 export function deliveryFeeFor(subtotal: number, d: DeliverySettings): number {
   return subtotal > 0 && subtotal < d.freeThreshold ? d.charge : 0;
+}
+
+/**
+ * The price a shopper actually pays given a regular price and an offer: the
+ * regular price (unrounded) when there's no offer, otherwise the discounted
+ * price rounded to the nearest ₹10 for a clean shelf price — e.g. 5% off ₹1000
+ * → ₹950, and an 803 result rounds to 800 while 807 rounds to 810. The regular
+ * price is left untouched so only the discount introduces rounding.
+ * `offerPercent` is clamped to 0–100 so a bad value can never produce a negative
+ * or inflated price.
+ */
+export function discountedPrice(original: number, offerPercent: number): number {
+  const pct = Math.min(Math.max(offerPercent || 0, 0), 100);
+  if (pct <= 0) return original;
+  return Math.round((original * (1 - pct / 100)) / 10) * 10;
+}
+
+/** True when the product has an active offer (a struck price should be shown). */
+export function hasOffer(product: Product): boolean {
+  return product.offerPercent > 0 && product.price < product.originalPrice;
 }
 
 /** Look up a product by its stable tracking code / id within a fetched list. */

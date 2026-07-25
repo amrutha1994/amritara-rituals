@@ -56,8 +56,17 @@ export const productType = defineType({
       title: "Price (₹, ex-shipping)",
       type: "number",
       description:
-        "The price shown on the storefront, exactly as entered. Shipping is added as a separate line at order time.",
+        "The regular price of this bracelet, before any offer. Shipping is added as a separate line at order time.",
       validation: (r) => r.required().min(0),
+    }),
+    defineField({
+      name: "offerPercent",
+      title: "Offer (% off)",
+      type: "number",
+      description:
+        "Discount percentage on the price above. Leave at 0 for no offer. Example: 5 turns a ₹100 bracelet into ₹95 across the storefront and orders.",
+      initialValue: 0,
+      validation: (r) => r.min(0).max(100),
     }),
     defineField({
       name: "remainingQuantity",
