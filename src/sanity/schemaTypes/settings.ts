@@ -31,6 +31,21 @@ export const settingsType = defineType({
       initialValue: 700,
       validation: (r) => r.required().min(0),
     }),
+    defineField({
+      name: "announcementEnabled",
+      title: "Show announcement banner",
+      type: "boolean",
+      description:
+        "Turn the site-wide banner strip at the very top of every page on or off.",
+      initialValue: false,
+    }),
+    defineField({
+      name: "announcementText",
+      title: "Announcement banner text",
+      type: "string",
+      description:
+        'The message shown in the banner, e.g. "Launch month offer — 5–10% off". Only appears when the banner is switched on above.',
+    }),
   ],
   preview: {
     select: { charge: "deliveryCharge", threshold: "freeDeliveryThreshold" },

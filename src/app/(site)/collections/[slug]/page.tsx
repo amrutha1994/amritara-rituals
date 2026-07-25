@@ -8,6 +8,7 @@ import {
 } from "@/sanity/queries";
 import ProductOrderPanel from "@/components/product-order-panel";
 import ProductGallery from "@/components/product-gallery";
+import { hasOffer } from "@/data/products";
 
 const inr = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -69,9 +70,21 @@ export default async function ProductPage({
               <p className="mt-3 text-lg italic text-primary-deep">
                 {product.shortIntention}
               </p>
-              <p className="mt-5 text-2xl font-semibold text-primary-deep">
-                {inr.format(product.price)}
-              </p>
+              <div className="mt-5 flex flex-wrap items-baseline gap-3">
+                <p className="text-2xl font-semibold text-primary-deep">
+                  {inr.format(product.price)}
+                </p>
+                {hasOffer(product) && (
+                  <>
+                    <p className="text-lg text-muted line-through">
+                      {inr.format(product.originalPrice)}
+                    </p>
+                    <span className="rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-white">
+                      {product.offerPercent}% off
+                    </span>
+                  </>
+                )}
+              </div>
               <p className="mt-1 text-sm text-muted">
                 {product.price >= delivery.freeThreshold
                   ? "Free delivery at checkout"

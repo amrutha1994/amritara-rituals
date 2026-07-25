@@ -1,5 +1,6 @@
 import { GoogleAnalytics } from "@next/third-parties/google";
 
+import AnnouncementBanner from "@/components/announcement-banner";
 import SiteHeader from "@/components/site-header";
 import SiteFooter from "@/components/site-footer";
 import { SelectionProvider } from "@/components/selection-provider";
@@ -35,6 +36,9 @@ export default async function SiteLayout({
       <ToastProvider>
         <SelectionProvider>
           <ProductSheetProvider>
+            {catalog.announcement.enabled && (
+              <AnnouncementBanner text={catalog.announcement.text} />
+            )}
             <SiteHeader />
             <div className="flex flex-1 flex-col">{children}</div>
             <SiteFooter />

@@ -3,7 +3,14 @@ import "server-only";
 import { cache } from "react";
 
 import type { Intention } from "@/data/intentions";
-import { DEFAULT_DELIVERY, type DeliverySettings, type Product } from "@/data/products";
+import {
+  DEFAULT_ANNOUNCEMENT,
+  DEFAULT_DELIVERY,
+  discountedPrice,
+  type Announcement,
+  type DeliverySettings,
+  type Product,
+} from "@/data/products";
 import type { Stone } from "@/data/stones";
 
 import { client } from "./client";
@@ -45,6 +52,7 @@ const PRODUCTS_QUERY = `*[_type == "product"] | order(orderRank asc){
   name,
   stone,
   suggestedPrice,
+  offerPercent,
   remainingQuantity,
   shortIntention,
   description,
@@ -59,6 +67,7 @@ interface RawProduct {
   name: string;
   stone: string | null;
   suggestedPrice: number;
+  offerPercent: number | null;
   remainingQuantity: number | null;
   shortIntention: string | null;
   description: string | null;
@@ -73,13 +82,17 @@ function mapProduct(r: RawProduct): Product {
     .filter((u): u is string => Boolean(u))
     .map((u) => sanityImage(u));
   const gallery = images.length ? images : [PLACEHOLDER_IMAGE];
+  const offerPercent = r.offerPercent ?? 0;
   return {
     id: r.id,
     name: r.name,
     stone: r.stone ?? "",
-    // Listed price = exactly the Sanity price; delivery is added on top at order
-    // time only when the order subtotal is below the free-delivery threshold.
-    price: r.suggestedPrice,
+    // Effective price = the regular price with any Sanity offer applied. This is
+    // what every total is computed from; delivery is added on top at order time
+    // only when the order subtotal is below the free-delivery threshold.
+    price: discountedPrice(r.suggestedPrice, offerPercent),
+    originalPrice: r.suggestedPrice,
+    offerPercent,
     remainingQuantity: r.remainingQuantity ?? undefined,
     shortIntention: r.shortIntention ?? "",
     description: r.description ?? "",
@@ -187,27 +200,46 @@ export const getAllIntentions = cache(async (): Promise<Intention[]> => {
 
 const SETTINGS_QUERY = `*[_type == "settings"][0]{
   deliveryCharge,
-  freeDeliveryThreshold
+  freeDeliveryThreshold,
+  announcementEnabled,
+  announcementText
 }`;
 
 interface RawSettings {
   deliveryCharge: number | null;
   freeDeliveryThreshold: number | null;
+  announcementEnabled: boolean | null;
+  announcementText: string | null;
 }
+
+/** The `settings` singleton, or `null` until it's created. Deduped per request. */
+const getRawSettings = cache(async (): Promise<RawSettings | null> => {
+  return client.fetch<RawSettings | null>(SETTINGS_QUERY, {}, fetchOptions);
+});
 
 /**
  * The delivery rule from the Sanity `settings` singleton, falling back to
  * DEFAULT_DELIVERY until that document is created (so ordering never breaks).
  */
 export const getDeliverySettings = cache(async (): Promise<DeliverySettings> => {
-  const raw = await client.fetch<RawSettings | null>(
-    SETTINGS_QUERY,
-    {},
-    fetchOptions,
-  );
+  const raw = await getRawSettings();
   return {
     charge: raw?.deliveryCharge ?? DEFAULT_DELIVERY.charge,
     freeThreshold: raw?.freeDeliveryThreshold ?? DEFAULT_DELIVERY.freeThreshold,
+  };
+});
+
+/**
+ * The announcement banner from the `settings` singleton. Only counts as enabled
+ * when the toggle is on *and* there's text to show, so an empty message can
+ * never render a blank bar. Falls back to hidden until settings exist.
+ */
+export const getAnnouncement = cache(async (): Promise<Announcement> => {
+  const raw = await getRawSettings();
+  const text = raw?.announcementText?.trim() ?? DEFAULT_ANNOUNCEMENT.text;
+  return {
+    enabled: Boolean(raw?.announcementEnabled) && text.length > 0,
+    text,
   };
 });
 
@@ -218,15 +250,18 @@ export interface Catalog {
   stones: Stone[];
   intentions: Intention[];
   delivery: DeliverySettings;
+  announcement: Announcement;
 }
 
 /** The whole catalogue in one call — used to hydrate the client catalog context. */
 export const getCatalog = cache(async (): Promise<Catalog> => {
-  const [products, stones, intentions, delivery] = await Promise.all([
-    getAllProducts(),
-    getAllStones(),
-    getAllIntentions(),
-    getDeliverySettings(),
-  ]);
-  return { products, stones, intentions, delivery };
+  const [products, stones, intentions, delivery, announcement] =
+    await Promise.all([
+      getAllProducts(),
+      getAllStones(),
+      getAllIntentions(),
+      getDeliverySettings(),
+      getAnnouncement(),
+    ]);
+  return { products, stones, intentions, delivery, announcement };
 });
