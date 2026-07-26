@@ -2,10 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import StoneFinder from "@/components/stone-finder";
 
+const title = "Find your stone";
+const description =
+  "Not sure where to begin? Choose your main intention and we'll reveal the healing stones whose energy you're reaching for — ready to wear or made your own.";
+
 export const metadata: Metadata = {
-  title: "Find your stone — Amritara Rituals",
-  description:
-    "Not sure where to begin? Choose your main intention and we'll reveal the healing stones whose energy you're reaching for — ready to wear or made your own.",
+  title,
+  description,
+  alternates: { canonical: "/stone-finder" },
+  openGraph: { title, description, url: "/stone-finder" },
 };
 
 export default function StoneFinderPage() {

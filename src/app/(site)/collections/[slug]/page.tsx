@@ -8,7 +8,8 @@ import {
 } from "@/sanity/queries";
 import ProductOrderPanel from "@/components/product-order-panel";
 import ProductGallery from "@/components/product-gallery";
-import { hasOffer } from "@/data/products";
+import { hasOffer, stockStatus, type Product } from "@/data/products";
+import { SITE_NAME, absoluteUrl } from "@/lib/site";
 
 const inr = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -27,10 +28,50 @@ export async function generateMetadata({
 }: PageProps<"/collections/[slug]">): Promise<Metadata> {
   const { slug } = await params;
   const product = await getProductBySlug(slug);
-  if (!product) return { title: "Ritual not found — Amritara Rituals" };
+  if (!product) return { title: "Ritual not found" };
+  const description = product.description || product.shortIntention;
+  const url = `/collections/${slug}`;
   return {
-    title: `${product.name} — Amritara Rituals`,
-    description: product.shortIntention,
+    title: product.name,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      type: "website",
+      title: product.name,
+      description,
+      url,
+      images: [{ url: product.image, alt: product.name }],
+    },
+    twitter: { card: "summary_large_image", images: [product.image] },
+  };
+}
+
+/**
+ * Schema.org Product structured data (JSON-LD) for a bracelet — this is what
+ * lets Google show the price, currency and stock status as a rich result. The
+ * price is the effective (post-offer) `product.price`; availability is derived
+ * from tracked stock (untracked stock reads as in-stock so it stays orderable).
+ */
+function productJsonLd(product: Product, slug: string) {
+  const availability =
+    stockStatus(product) === "sold_out"
+      ? "https://schema.org/OutOfStock"
+      : "https://schema.org/InStock";
+  return {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    description: product.description || product.shortIntention,
+    sku: product.id,
+    image: product.images.map((u) => (u.startsWith("http") ? u : absoluteUrl(u))),
+    brand: { "@type": "Brand", name: SITE_NAME },
+    offers: {
+      "@type": "Offer",
+      price: product.price,
+      priceCurrency: "INR",
+      availability,
+      url: absoluteUrl(`/collections/${slug}`),
+    },
   };
 }
 
@@ -46,6 +87,12 @@ export default async function ProductPage({
 
   return (
     <main className="flex flex-1 flex-col">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(productJsonLd(product, slug)),
+        }}
+      />
       <section className="px-6 py-10 sm:py-14">
         <div className="mx-auto max-w-6xl">
           <Link
