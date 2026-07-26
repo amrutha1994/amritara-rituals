@@ -4,10 +4,15 @@ import BraceletCustomiser from "@/components/bracelet-customiser";
 import { getStone, type BeadSize, type Stone } from "@/data/stones";
 import { getAllStones } from "@/sanity/queries";
 
+const title = "Design your own ritual";
+const description =
+  "Build a custom gemstone bracelet. Choose your bead size, combine the stones whose energy you're reaching for, and order it your way.";
+
 export const metadata: Metadata = {
-  title: "Design your own ritual — Amritara Rituals",
-  description:
-    "Build a custom gemstone bracelet. Choose your bead size, combine the stones whose energy you're reaching for, and order it your way.",
+  title,
+  description,
+  alternates: { canonical: "/customise" },
+  openGraph: { title, description, url: "/customise" },
 };
 
 /**
