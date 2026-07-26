@@ -14,7 +14,7 @@ export const SITE_NAME = "Amritara Rituals";
 export const SITE_TAGLINE = "Align your energy & soul";
 
 export const SITE_URL = (
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://amritararituals.com"
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.amritararituals.com"
 ).replace(/\/+$/, "");
 
 /**
