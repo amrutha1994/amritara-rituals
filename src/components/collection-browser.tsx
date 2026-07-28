@@ -21,6 +21,34 @@ const SORTS: { id: string; label: string; cmp?: (a: Product, b: Product) => numb
   { id: "name", label: "Name: A–Z", cmp: (a, b) => a.name.localeCompare(b.name) },
 ];
 
+// Native <select> arrows render inconsistently across browsers (Chrome hugs the
+// edge, Safari leaves more room). We hide the native arrow (`appearance-none`)
+// and draw our own chevron, with `pr-9` reserving space so text/arrow never
+// collide — identical in every browser.
+const selectClass =
+  "cursor-pointer appearance-none rounded-full border border-border bg-surface py-2 pl-4 pr-9 text-sm text-foreground shadow-sm transition-colors hover:border-gold focus:border-gold focus:outline-none";
+
+/** A pill-styled dropdown with a consistent custom chevron. */
+function SelectPill(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
+  return (
+    <div className="relative inline-flex">
+      <select {...props} className={selectClass} />
+      <svg
+        aria-hidden
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+      >
+        <path d="m6 9 6 6 6-6" />
+      </svg>
+    </div>
+  );
+}
+
 export default function CollectionBrowser({
   products,
   intentions,
@@ -77,9 +105,6 @@ export default function CollectionBrowser({
     setSelectedPrice("");
   }
 
-  const selectClass =
-    "rounded-full border border-border bg-surface px-4 py-2 text-sm text-foreground shadow-sm transition-colors hover:border-gold focus:border-gold focus:outline-none";
-
   return (
     <div className="mt-12">
       {/* Flagship facet: shop by intention */}
@@ -116,9 +141,8 @@ export default function CollectionBrowser({
           {results.length} {results.length === 1 ? "bracelet" : "bracelets"}
         </p>
         <div className="flex flex-wrap items-center gap-2">
-          <select
+          <SelectPill
             aria-label="Filter by stone"
-            className={selectClass}
             value={selectedStone}
             onChange={(e) => setSelectedStone(e.target.value)}
           >
@@ -128,11 +152,10 @@ export default function CollectionBrowser({
                 {s}
               </option>
             ))}
-          </select>
+          </SelectPill>
 
-          <select
+          <SelectPill
             aria-label="Filter by price"
-            className={selectClass}
             value={selectedPrice}
             onChange={(e) => setSelectedPrice(e.target.value)}
           >
@@ -142,11 +165,10 @@ export default function CollectionBrowser({
                 {b.label}
               </option>
             ))}
-          </select>
+          </SelectPill>
 
-          <select
+          <SelectPill
             aria-label="Sort"
-            className={selectClass}
             value={sort}
             onChange={(e) => setSort(e.target.value)}
           >
@@ -155,7 +177,7 @@ export default function CollectionBrowser({
                 {s.label}
               </option>
             ))}
-          </select>
+          </SelectPill>
 
           {hasFilters && (
             <button

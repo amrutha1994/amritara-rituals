@@ -50,7 +50,7 @@ export default function ProductCard({ product }: { product: Product }) {
       </Link>
 
       <div className="flex flex-col gap-2 p-5 pb-3">
-        <h3 className="font-display text-lg font-medium text-foreground">
+        <h3 className="font-title text-base font-normal text-foreground">
           <Link
             href={href}
             className="decoration-gold-light/60 underline-offset-4 transition-colors hover:text-primary hover:underline"

@@ -39,6 +39,7 @@
   --color-border: var(--border);
 
   --font-display: var(--font-display);
+  --font-title: var(--font-title);
   --font-sans: var(--font-body);
 }
 
