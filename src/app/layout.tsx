@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Mulish } from "next/font/google";
+import { Cormorant_Garamond, Marcellus, Mulish } from "next/font/google";
 import "./globals.css";
 import { SITE_NAME, SITE_TAGLINE, SITE_URL, absoluteUrl } from "@/lib/site";
 
@@ -8,6 +8,13 @@ const display = Cormorant_Garamond({
   variable: "--font-display",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
+});
+
+// Classical, airy serif for product titles (`font-title`). Single weight (400).
+const title = Marcellus({
+  variable: "--font-title",
+  subsets: ["latin"],
+  weight: ["400"],
 });
 
 // Soft, modern sans for body copy.
@@ -93,7 +100,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${display.variable} ${body.variable} h-full antialiased`}
+      className={`${display.variable} ${title.variable} ${body.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <script

@@ -111,7 +111,7 @@ export default async function ProductPage({
               <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gold-antique">
                 {product.stone}
               </p>
-              <h1 className="mt-3 font-display text-3xl font-medium text-foreground sm:text-4xl">
+              <h1 className="mt-3 font-title text-3xl font-normal text-foreground sm:text-4xl">
                 {product.name}
               </h1>
               <p className="mt-3 text-lg italic text-primary-deep">
