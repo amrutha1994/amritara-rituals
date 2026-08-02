@@ -40,13 +40,15 @@ const Icon = {
   ),
 } as const;
 
+// Stone Décor lives inside the Collections section as a tab, so it needs no
+// separate nav entry.
 const NAV_LINKS = [
   { label: "Home", href: "/", icon: Icon.Home },
   { label: "Collections", href: "#collections", icon: Icon.Collections },
   { label: "Customise", href: "/customise", icon: Icon.Customise },
   { label: "Our Story", href: "#story", icon: Icon.Story },
   { label: "Contact", href: "#contact", icon: Icon.Contact },
-] as const;
+];
 
 export default function SiteHeader() {
   const [open, setOpen] = useState(false);

@@ -11,6 +11,7 @@ import {
   type DeliverySettings,
   type Product,
 } from "@/data/products";
+import { DECOR_ENABLED } from "@/lib/features";
 import type { Stone } from "@/data/stones";
 
 import { client } from "./client";
@@ -114,6 +115,58 @@ export const getAllProducts = cache(async (): Promise<Product[]> => {
 export const getProductBySlug = cache(
   async (slug: string): Promise<Product | undefined> => {
     const products = await getAllProducts();
+    return products.find((p) => p.slug === slug);
+  },
+);
+
+// ── Stone Décor (car/wall hangings, figurines) ───────────────────────────────
+// A separate document type mapped into the same `Product` shape (with
+// `kind: "decor"`) so it reuses the product card and order flow. Only fetched
+// when the feature flag is on, so nothing about this line reaches the client
+// until it's released.
+
+const DECOR_QUERY = `*[_type == "decorProduct"] | order(orderRank asc){
+  "id": code,
+  name,
+  stone,
+  suggestedPrice,
+  offerPercent,
+  remainingQuantity,
+  dimensions,
+  placement,
+  shortIntention,
+  description,
+  benefits,
+  "slug": slug.current,
+  "intentions": intentions[]->key.current,
+  "images": images[].asset->url
+}`;
+
+interface RawDecor extends RawProduct {
+  dimensions: string | null;
+  placement: (string | null)[] | null;
+}
+
+function mapDecor(r: RawDecor): Product {
+  return {
+    ...mapProduct(r),
+    kind: "decor",
+    dimensions: r.dimensions ?? undefined,
+    placement: (r.placement ?? []).filter((p): p is string => Boolean(p)),
+  };
+}
+
+/** All Stone Décor objects, in display order. Empty when the flag is off. */
+export const getDecorProducts = cache(async (): Promise<Product[]> => {
+  if (!DECOR_ENABLED) return [];
+  const raw = await client.fetch<RawDecor[]>(DECOR_QUERY, {}, fetchOptions);
+  return raw.map(mapDecor);
+});
+
+/** One décor object by slug (for /decor/[slug]). */
+export const getDecorBySlug = cache(
+  async (slug: string): Promise<Product | undefined> => {
+    const products = await getDecorProducts();
     return products.find((p) => p.slug === slug);
   },
 );
@@ -251,17 +304,20 @@ export interface Catalog {
   intentions: Intention[];
   delivery: DeliverySettings;
   announcement: Announcement;
+  /** Stone Décor objects — empty until the feature flag is turned on. */
+  decor: Product[];
 }
 
 /** The whole catalogue in one call — used to hydrate the client catalog context. */
 export const getCatalog = cache(async (): Promise<Catalog> => {
-  const [products, stones, intentions, delivery, announcement] =
+  const [products, stones, intentions, delivery, announcement, decor] =
     await Promise.all([
       getAllProducts(),
       getAllStones(),
       getAllIntentions(),
       getDeliverySettings(),
       getAnnouncement(),
+      getDecorProducts(),
     ]);
-  return { products, stones, intentions, delivery, announcement };
+  return { products, stones, intentions, delivery, announcement, decor };
 });

@@ -40,11 +40,20 @@ export default defineConfig({
               S,
               context,
             }),
+            orderableDocumentListDeskItem({
+              type: "decorProduct",
+              title: "Stone Décor (ordered)",
+              S,
+              context,
+            }),
             S.divider(),
             // Everything else (stones, intentions) as default lists — but not
-            // settings (pinned above) or product (the orderable list above).
+            // settings (pinned above) or the orderable product lists above.
             ...S.documentTypeListItems().filter(
-              (item) => !["settings", "product"].includes(item.getId() ?? ""),
+              (item) =>
+                !["settings", "product", "decorProduct"].includes(
+                  item.getId() ?? "",
+                ),
             ),
           ]),
     }),

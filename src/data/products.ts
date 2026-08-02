@@ -83,6 +83,17 @@ export interface Product {
    * from its stone(s). Drives the collection filter. Empty until authored.
    */
   intentions: IntentionId[];
+  /**
+   * What kind of product this is. `undefined`/"bracelet" is the wearable
+   * bracelet (the default). "decor" is a Stone Décor object — it has no wrist
+   * size and links under /decor instead of /collections. Drives the few
+   * type-aware bits in shared components (card link, order flow).
+   */
+  kind?: "bracelet" | "decor";
+  /** Décor only — physical size text, e.g. "Height 7 cm". */
+  dimensions?: string;
+  /** Décor only — placement ids where the object is meant to live (car/wall/…). */
+  placement?: string[];
 }
 
 /** Stock state derived from a product's optional `remainingQuantity`. */
