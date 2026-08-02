@@ -106,7 +106,7 @@ export default function CollectionBrowser({
   }
 
   return (
-    <div className="mt-12">
+    <div className="mt-8">
       {/* Flagship facet: shop by intention */}
       <div className="mx-auto max-w-4xl text-center">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold-antique">
@@ -122,7 +122,7 @@ export default function CollectionBrowser({
                 onClick={() => toggleIntention(i.id)}
                 aria-pressed={active}
                 className={
-                  "rounded-full border px-4 py-1.5 text-sm transition-colors " +
+                  "rounded-full border px-3.5 py-1 text-xs transition-colors " +
                   (active
                     ? "border-primary bg-primary text-white shadow-sm"
                     : "border-border bg-surface text-foreground hover:border-gold hover:text-primary-deep")
@@ -136,7 +136,7 @@ export default function CollectionBrowser({
       </div>
 
       {/* Controls bar: count · stone · price · sort · clear */}
-      <div className="mt-8 flex flex-col gap-4 border-y border-border py-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mt-6 flex flex-col gap-4 border-y border-border py-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-muted" aria-live="polite">
           {results.length} {results.length === 1 ? "bracelet" : "bracelets"}
         </p>
@@ -193,7 +193,7 @@ export default function CollectionBrowser({
 
       {/* Results */}
       {results.length > 0 ? (
-        <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {results.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}

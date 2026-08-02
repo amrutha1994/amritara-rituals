@@ -71,7 +71,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Product collection */}
+      {/* Product collection — bracelets + Stone Décor as tabs */}
       <CollectionsSection />
 
       {/* Bead size guide */}

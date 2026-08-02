@@ -151,6 +151,55 @@ export function buildProductOrderLink(
 }
 
 /**
+ * The pre-filled message body for ordering one Stone Décor object. Same shape as
+ * a product order but sizeless (décor has no wrist size); the code and name
+ * identify the item.
+ */
+export function buildDecorOrderText(
+  product: Product,
+  delivery: DeliverySettings,
+  imageUrl?: string,
+): string {
+  const fee = deliveryFeeFor(product.price, delivery);
+  return [
+    "Hi Amritara Rituals!",
+    "I'd like to order this piece:",
+    `• ${product.name} (${product.id}) — ${inr.format(product.price)}`,
+    ...(imageUrl ? ["", `Photo: ${imageUrl}`] : []),
+    "",
+    deliveryLine(fee),
+    `Total: ${inr.format(product.price + fee)}`,
+    "",
+    "Could you help me complete the order?",
+  ].join("\n");
+}
+
+/** Deep link that opens WhatsApp pre-filled to order one décor object. */
+export function buildDecorOrderLink(
+  product: Product,
+  delivery: DeliverySettings,
+  imageUrl?: string,
+): string {
+  return waLink(buildDecorOrderText(product, delivery, imageUrl));
+}
+
+/** Deep link to pre-order a sold-out décor object (intent-to-buy, no total). */
+export function buildDecorPreOrderLink(
+  product: Product,
+  imageUrl?: string,
+): string {
+  const text = [
+    "Hi Amritara Rituals!",
+    "This piece is sold out — I'd like to pre-order it:",
+    `• ${product.name} (${product.id})`,
+    ...(imageUrl ? ["", `Photo: ${imageUrl}`] : []),
+    "",
+    "Could you let me know when it's back and reserve one for me?",
+  ].join("\n");
+  return waLink(text);
+}
+
+/**
  * The pre-filled message body for PRE-ORDERING a sold-out product. Framed as
  * intent-to-buy rather than a live order: no delivery/total (those are settled
  * when it's back in stock), just the item and a request to reserve one. Helps
