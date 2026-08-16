@@ -78,6 +78,14 @@ export const decorProductType = defineType({
       validation: (r) => r.min(0).integer(),
     }),
     defineField({
+      name: "show",
+      title: "Show product",
+      type: "boolean",
+      description:
+        "Whether this product should be visible in the store. Turn off to hide the product without deleting it.",
+      initialValue: true,
+    }),
+    defineField({
       name: "dimensions",
       title: "Dimensions / size",
       type: "string",
