@@ -58,7 +58,7 @@ function decorJsonLd(product: Product, slug: string) {
     name: product.name,
     description: product.description || product.shortIntention,
     sku: product.id,
-    category: "Stone Décor",
+    category: "For your space",
     image: product.images.map((u) => (u.startsWith("http") ? u : absoluteUrl(u))),
     brand: { "@type": "Brand", name: SITE_NAME },
     offers: {
@@ -95,7 +95,7 @@ export default async function DecorDetailPage({
             href="/decor"
             className="inline-flex items-center gap-1.5 text-sm font-medium text-muted transition-colors hover:text-primary"
           >
-            <span aria-hidden>←</span> Back to Stone Décor
+            <span aria-hidden>←</span> Back to For your space
           </Link>
 
           <div className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-2 lg:gap-16">
@@ -103,7 +103,7 @@ export default async function DecorDetailPage({
 
             <div className="flex flex-col">
               <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gold-antique">
-                Stone Décor
+                For your space
                 {product.stone ? ` · ${product.stone}` : ""}
               </p>
               <h1 className="mt-3 font-display text-3xl font-medium text-foreground sm:text-4xl">

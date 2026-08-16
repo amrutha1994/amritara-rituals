@@ -9,14 +9,12 @@ import DecorBrowser from "@/components/decor-browser";
 
 type TabId = "bracelets" | "decor";
 
-/** Per-tab section intro — the title/subcopy update with the active range. */
-const COPY: Record<TabId, { title: string; subcopy: string }> = {
+/** Per-tab subcopy — the tab label acts as the title, so this is the only intro line. */
+const COPY: Record<TabId, { subcopy: string }> = {
   bracelets: {
-    title: "Wearable rituals",
-    subcopy: "One gemstone, one intention — choose the energy you want to wear.",
+    subcopy: "One crystal, one intention. Choose the energy you want to wear!",
   },
   decor: {
-    title: "Stone Décor",
     subcopy:
       "Natural-stone objects to carry an intention into your home, car and sacred spaces.",
   },
@@ -65,7 +63,7 @@ function DecorIcon({ className }: IconProps) {
 
 const TABS: { id: TabId; label: string; Icon: (p: IconProps) => React.ReactElement }[] = [
   { id: "bracelets", label: "Bracelets", Icon: BraceletIcon },
-  { id: "decor", label: "Stone Décor", Icon: DecorIcon },
+  { id: "decor", label: "For your space", Icon: DecorIcon },
 ];
 
 /**
@@ -146,11 +144,8 @@ export default function CatalogTabs({
         </div>
       )}
 
-      <div className="mx-auto mt-6 max-w-2xl text-center">
-        <h2 className="font-display text-2xl font-medium text-foreground sm:text-3xl">
-          {COPY[active].title}
-        </h2>
-        <p className="mx-auto mt-2 max-w-xl text-sm leading-7 text-muted sm:text-base">
+      <div className="mx-auto mt-4 max-w-2xl text-center">
+        <p className="mx-auto max-w-xl text-sm leading-7 text-muted sm:text-base">
           {COPY[active].subcopy}
         </p>
       </div>

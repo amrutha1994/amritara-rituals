@@ -5,7 +5,7 @@ import { getAllIntentions, getDecorProducts } from "@/sanity/queries";
 import DecorBrowser from "@/components/decor-browser";
 import { DECOR_ENABLED } from "@/lib/features";
 
-const title = "Stone Décor";
+const title = "For your space";
 const description =
   "Natural-stone objects for your home, car and sacred spaces — seven-chakra car hangings, wall hangings and crystal figurines like owls, turtles and elephants.";
 
@@ -31,10 +31,10 @@ export default async function DecorPage() {
         <div className="mx-auto max-w-6xl">
           <div className="mx-auto max-w-2xl text-center">
             <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gold-antique">
-              Rituals for your space
+              Beyond bracelets
             </p>
             <h1 className="mt-4 font-display text-3xl font-medium text-foreground sm:text-4xl">
-              Stone Décor
+              For your space
             </h1>
             <p className="mt-5 text-base leading-8 text-muted sm:text-lg">
               Sacred objects carved from natural stone — to carry an intention
