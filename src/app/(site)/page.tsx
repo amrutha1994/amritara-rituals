@@ -32,7 +32,7 @@ export default function Home() {
             <div className="max-w-md text-left">
               <span className="inline-flex items-center gap-2 rounded-full border border-gold/40 bg-surface/70 px-4 py-1.5 text-xs uppercase tracking-[0.25em] text-gold-antique backdrop-blur-sm">
                 <span className="h-1.5 w-1.5 rounded-full bg-gold-antique" />
-                Handcrafted gemstone rituals
+                Natural crystals with intention
               </span>
 
               <h1 className="mt-6 font-display font-normal not-italic leading-tight text-primary-deep">

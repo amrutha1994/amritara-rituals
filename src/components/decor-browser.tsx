@@ -47,7 +47,6 @@ export default function DecorBrowser({
   }
 
   const hasFilters = selectedIntentions.length > 0;
-
   return (
     <div className="mt-8">
       {/* Intention pills */}
@@ -78,9 +77,11 @@ export default function DecorBrowser({
       {/* Results */}
       {results.length > 0 ? (
         <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {results.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
+          {results
+            .filter((product) => product.show)
+            .map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
         </div>
       ) : (
         <div className="mt-16 text-center">
