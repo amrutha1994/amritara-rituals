@@ -55,6 +55,7 @@ const PRODUCTS_QUERY = `*[_type == "product"] | order(orderRank asc){
   suggestedPrice,
   offerPercent,
   remainingQuantity,
+  show,
   shortIntention,
   description,
   benefits,
@@ -70,6 +71,7 @@ interface RawProduct {
   suggestedPrice: number;
   offerPercent: number | null;
   remainingQuantity: number | null;
+  show: boolean | null;
   shortIntention: string | null;
   description: string | null;
   benefits: string[] | null;
@@ -95,6 +97,7 @@ function mapProduct(r: RawProduct): Product {
     originalPrice: r.suggestedPrice,
     offerPercent,
     remainingQuantity: r.remainingQuantity ?? undefined,
+    show: r.show ?? true,
     shortIntention: r.shortIntention ?? "",
     description: r.description ?? "",
     benefits: r.benefits ?? undefined,
@@ -132,6 +135,7 @@ const DECOR_QUERY = `*[_type == "decorProduct"] | order(orderRank asc){
   suggestedPrice,
   offerPercent,
   remainingQuantity,
+  show,
   dimensions,
   placement,
   shortIntention,
