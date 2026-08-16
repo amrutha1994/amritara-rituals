@@ -29,7 +29,7 @@ export const BRACELET_SIZES: BraceletSize[] = [
  * helpers so client components can import them without touching the server.
  */
 export interface Product {
-  show: boolean;
+  show?: boolean;
   /**
    * Stable tracking code / SKU (Sanity `code`). Appears in the WhatsApp order,
    * so keep it short and unique (e.g. "AMR-AME-01"). Never reuse a retired code.
