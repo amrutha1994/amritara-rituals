@@ -56,6 +56,7 @@ const PRODUCTS_QUERY = `*[_type == "product"] | order(orderRank asc){
   offerPercent,
   remainingQuantity,
   show,
+  isNew,
   shortIntention,
   description,
   benefits,
@@ -72,6 +73,7 @@ interface RawProduct {
   offerPercent: number | null;
   remainingQuantity: number | null;
   show: boolean | null;
+  isNew: boolean | null;
   shortIntention: string | null;
   description: string | null;
   benefits: string[] | null;
@@ -98,6 +100,8 @@ function mapProduct(r: RawProduct): Product {
     offerPercent,
     remainingQuantity: r.remainingQuantity ?? undefined,
     show: r.show ?? true,
+    // Unset (older documents authored before the flag existed) means not new.
+    isNew: r.isNew ?? false,
     shortIntention: r.shortIntention ?? "",
     description: r.description ?? "",
     benefits: r.benefits ?? undefined,
@@ -136,6 +140,7 @@ const DECOR_QUERY = `*[_type == "decorProduct"] | order(orderRank asc){
   offerPercent,
   remainingQuantity,
   show,
+  isNew,
   dimensions,
   placement,
   shortIntention,

@@ -8,7 +8,12 @@ import {
 } from "@/sanity/queries";
 import ProductOrderPanel from "@/components/product-order-panel";
 import ProductGallery from "@/components/product-gallery";
-import { hasOffer, stockStatus, type Product } from "@/data/products";
+import {
+  hasOffer,
+  isNewArrival,
+  stockStatus,
+  type Product,
+} from "@/data/products";
 import { SITE_NAME, absoluteUrl } from "@/lib/site";
 
 const inr = new Intl.NumberFormat("en-IN", {
@@ -108,9 +113,16 @@ export default async function ProductPage({
 
             {/* Details */}
             <div className="flex flex-col">
-              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gold-antique">
-                {product.stone}
-              </p>
+              <div className="flex flex-wrap items-center gap-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gold-antique">
+                  {product.stone}
+                </p>
+                {isNewArrival(product) && (
+                  <span className="rounded-full bg-crimson-deep px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white">
+                    New
+                  </span>
+                )}
+              </div>
               <h1 className="mt-3 font-title text-3xl font-normal text-foreground sm:text-4xl">
                 {product.name}
               </h1>

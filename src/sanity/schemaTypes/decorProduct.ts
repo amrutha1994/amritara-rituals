@@ -86,6 +86,14 @@ export const decorProductType = defineType({
       initialValue: true,
     }),
     defineField({
+      name: "isNew",
+      title: "New arrival",
+      type: "boolean",
+      description:
+        'Marks this piece as a recent addition — shows a "New" badge on its card and product page. Turn it off once it\'s no longer one of the latest.',
+      initialValue: false,
+    }),
+    defineField({
       name: "dimensions",
       title: "Dimensions / size",
       type: "string",

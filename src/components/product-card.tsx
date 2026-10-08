@@ -1,5 +1,11 @@
 import Link from "next/link";
-import { hasOffer, isSoldOut, stockLabel, type Product } from "@/data/products";
+import {
+  hasOffer,
+  isNewArrival,
+  isSoldOut,
+  stockLabel,
+  type Product,
+} from "@/data/products";
 import CardAddButton from "@/components/card-add-button";
 import ProductImage from "@/components/product-image";
 
@@ -16,6 +22,7 @@ export default function ProductCard({ product }: { product: Product }) {
   const soldOut = isSoldOut(product);
   const stock = stockLabel(product);
   const onOffer = hasOffer(product);
+  const isNew = isNewArrival(product);
 
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-[0_10px_30px_-18px_rgba(144,86,141,0.4)] transition-all hover:-translate-y-1 hover:shadow-[0_18px_40px_-18px_rgba(144,86,141,0.55)]">
@@ -48,6 +55,14 @@ export default function ProductCard({ product }: { product: Product }) {
               {product.offerPercent}% off
             </span>
           )
+        )}
+        {/* Sits over the bottom-right of the photo, opposite the stone pill and
+            below the offer badge — a solid deep-red flash so it reads against
+            the warm, light product shots instead of blending into them. */}
+        {isNew && (
+          <span className="absolute bottom-3 right-3 rounded-full bg-crimson-deep px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white shadow-[0_6px_16px_-6px_rgba(0,0,0,0.55)] ring-1 ring-white/30">
+            New
+          </span>
         )}
       </Link>
 

@@ -20,6 +20,14 @@
   --gold-antique: #b8923e; /* deeper antique gold for accents */
   --gold-light: #e3c478; /* light gilt highlight */
   --border: #ece2ec; /* hairline borders */
+  --crimson-deep: #96203a; /* deep red flash — the "New" badge over photos */
+
+  /* Warm set for copy laid over photography. The banner photos are terracotta
+     and sunlit (the hero's left third averages #b1734c), so dark plum text on a
+     pale scrim reads as mush — these invert it: ivory type on a clay veil. */
+  --cream: #fbf5ec; /* ivory headline text on photos */
+  --cream-soft: #f1e4d4; /* body copy on photos */
+  --clay-deep: #2d180e; /* scrim + text sitting on gold fills */
 }
 
 @theme inline {
@@ -37,6 +45,10 @@
   --color-gold-antique: var(--gold-antique);
   --color-gold-light: var(--gold-light);
   --color-border: var(--border);
+  --color-crimson-deep: var(--crimson-deep);
+  --color-cream: var(--cream);
+  --color-cream-soft: var(--cream-soft);
+  --color-clay-deep: var(--clay-deep);
 
   --font-display: var(--font-display);
   --font-title: var(--font-title);

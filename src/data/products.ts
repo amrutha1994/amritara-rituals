@@ -64,6 +64,12 @@ export interface Product {
    *   - `> 0` → shown to shoppers as "Only N left"
    */
   remainingQuantity?: number;
+  /**
+   * Whether this is one of the latest additions (Sanity `isNew`) — drives the
+   * "New" badge on the card and detail page. Authored by hand rather than
+   * derived from a creation date, so the flag is retired deliberately.
+   */
+  isNew: boolean;
   /** One-line intention / purpose */
   shortIntention: string;
   /** Longer descriptive copy */
@@ -119,6 +125,15 @@ export function stockLabel(product: Product): string | null {
   if (stockStatus(product) !== "in_stock") return null;
   const n = product.remainingQuantity as number;
   return n <= 5 ? `Only ${n} left` : `${n} in stock`;
+}
+
+/**
+ * True when the "New" badge should be shown: the Sanity flag is on *and* the
+ * product is still orderable — a sold-out piece reads as unavailable, so the
+ * "Sold out" badge takes that slot instead.
+ */
+export function isNewArrival(product: Product): boolean {
+  return product.isNew && !isSoldOut(product);
 }
 
 /**
