@@ -5,7 +5,12 @@ import type { Metadata } from "next";
 import { getDecorProducts, getDecorBySlug } from "@/sanity/queries";
 import DecorOrderPanel from "@/components/decor-order-panel";
 import ProductGallery from "@/components/product-gallery";
-import { hasOffer, stockStatus, type Product } from "@/data/products";
+import {
+  hasOffer,
+  isNewArrival,
+  stockStatus,
+  type Product,
+} from "@/data/products";
 import { DECOR_ENABLED } from "@/lib/features";
 import { SITE_NAME, absoluteUrl } from "@/lib/site";
 
@@ -102,10 +107,17 @@ export default async function DecorDetailPage({
             <ProductGallery product={product} />
 
             <div className="flex flex-col">
-              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gold-antique">
-                For your space
-                {product.stone ? ` · ${product.stone}` : ""}
-              </p>
+              <div className="flex flex-wrap items-center gap-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gold-antique">
+                  For your space
+                  {product.stone ? ` · ${product.stone}` : ""}
+                </p>
+                {isNewArrival(product) && (
+                  <span className="rounded-full bg-crimson-deep px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white">
+                    New
+                  </span>
+                )}
+              </div>
               <h1 className="mt-3 font-display text-3xl font-medium text-foreground sm:text-4xl">
                 {product.name}
               </h1>
