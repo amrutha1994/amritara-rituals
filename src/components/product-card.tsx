@@ -1,5 +1,6 @@
 import Link from "next/link";
 import {
+  displayName,
   hasOffer,
   isNewArrival,
   isSoldOut,
@@ -23,6 +24,7 @@ export default function ProductCard({ product }: { product: Product }) {
   const stock = stockLabel(product);
   const onOffer = hasOffer(product);
   const isNew = isNewArrival(product);
+  const title = displayName(product);
 
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-[0_10px_30px_-18px_rgba(144,86,141,0.4)] transition-all hover:-translate-y-1 hover:shadow-[0_18px_40px_-18px_rgba(144,86,141,0.55)]">
@@ -30,12 +32,12 @@ export default function ProductCard({ product }: { product: Product }) {
           (price + Add to bag) is a separate, non-link region so taps never mix. */}
       <Link
         href={href}
-        aria-label={`${product.name} — view details`}
+        aria-label={`${title} — view details`}
         className="relative block aspect-square w-full overflow-hidden"
       >
         <ProductImage
           src={product.image}
-          alt={product.name}
+          alt={title}
           fill
           sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
           className={`object-cover transition-transform duration-500 group-hover:scale-105 ${
@@ -72,7 +74,7 @@ export default function ProductCard({ product }: { product: Product }) {
             href={href}
             className="decoration-gold-light/60 underline-offset-4 transition-colors hover:text-primary hover:underline"
           >
-            {product.name}
+            {title}
           </Link>
         </h3>
         <p className="text-sm leading-6 text-muted">{product.shortIntention}</p>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import {
   BRACELET_SIZES,
+  displayName,
   isSoldOut,
   stockLabel,
   type BraceletSizeId,
@@ -74,13 +75,13 @@ export default function ProductOrderPanel({ product }: { product: Product }) {
       size,
       value: product.price,
     });
-    show(`Added ${product.name} · Size ${size}`);
+    show(`Added ${displayName(product)} · Size ${size}`);
   };
 
   const handleDecrement = () => {
     if (!size) return;
     decrement(product.id, size);
-    show(`Removed ${product.name} · Size ${size}`);
+    show(`Removed ${displayName(product)} · Size ${size}`);
   };
 
   // Sold out → pre-order instead of order: same size choice, but the message is

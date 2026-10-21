@@ -3,6 +3,14 @@ import type { IntentionId } from "@/data/intentions";
 /** Bracelet size identifiers (wrist-circumference based). */
 export type BraceletSizeId = "S" | "M" | "L";
 
+/**
+ * Bead diameter of a ready-made bracelet — distinct from `BraceletSizeId`,
+ * which is the wrist fit. Mirrors the stones' `BeadSize` union rather than
+ * importing it: `data/stones` already imports from this module, and importing
+ * back would make the two circular.
+ */
+export type ProductBeadSize = "6mm" | "8mm";
+
 export interface BraceletSize {
   id: BraceletSizeId;
   /** Human-friendly name, e.g. "Medium" */
@@ -39,6 +47,12 @@ export interface Product {
   name: string;
   /** Primary gemstone */
   stone: string;
+  /**
+   * Bead diameter (Sanity `beadSize`). Optional: décor objects have none, and a
+   * bracelet has none until it's been recorded in the Studio. Drives the
+   * collection filter and the size shown beside the name.
+   */
+  beadSize?: ProductBeadSize;
   /**
    * Effective price in INR — what the shopper actually pays and what every
    * total is computed from. Equals `originalPrice` when there's no offer, or the
@@ -101,6 +115,21 @@ export interface Product {
   dimensions?: string;
   /** Décor only — placement ids where the object is meant to live (car/wall/…). */
   placement?: string[];
+}
+
+/**
+ * The name as shoppers should see it, with the bead size appended when the name
+ * doesn't already spell one out: "Jade Bracelet" + 6mm reads "Jade Bracelet ·
+ * 6mm", while a legacy "Jade Bracelet (6mm)" is left exactly as authored.
+ *
+ * Two bracelets cut from the same stone differ only by bead size, so the size
+ * has to stay on the label or their cards become indistinguishable in the grid.
+ * Accepting both spellings means titles can be tidied in the Studio one at a
+ * time instead of needing a flag day where every name changes at once.
+ */
+export function displayName(product: Product): string {
+  if (!product.beadSize || /\d\s*mm/i.test(product.name)) return product.name;
+  return `${product.name} · ${product.beadSize}`;
 }
 
 /** Stock state derived from a product's optional `remainingQuantity`. */

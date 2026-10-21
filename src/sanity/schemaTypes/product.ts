@@ -52,6 +52,20 @@ export const productType = defineType({
       description: 'Display name of the stone(s), e.g. "Jade" or "Lava · Red Tiger Eye".',
     }),
     defineField({
+      name: "beadSize",
+      title: "Bead size",
+      type: "string",
+      options: {
+        list: [
+          { title: "6mm", value: "6mm" },
+          { title: "8mm", value: "8mm" },
+        ],
+        layout: "radio",
+      },
+      description:
+        'Bead diameter of this bracelet — not the wrist size, which the shopper picks at order time. Powers the bead-size filter on the collection page and is shown beside the name, so you can drop the "(6mm)" from the title once this is set.',
+    }),
+    defineField({
       name: "suggestedPrice",
       title: "Price (₹, ex-shipping)",
       type: "number",

@@ -59,6 +59,7 @@ export default function CollectionBrowser({
   // ── Filter state (local — a click always re-renders) ──────────────────────
   const [selectedIntentions, setSelectedIntentions] = useState<string[]>([]);
   const [selectedStone, setSelectedStone] = useState("");
+  const [selectedBeadSize, setSelectedBeadSize] = useState("");
   const [selectedPrice, setSelectedPrice] = useState("");
   const [sort, setSort] = useState("featured");
 
@@ -69,6 +70,15 @@ export default function CollectionBrowser({
   );
   const stoneOptions = useMemo(
     () => Array.from(new Set(products.map((p) => p.stone).filter(Boolean))).sort(),
+    [products],
+  );
+  // Stays hidden until at least two sizes are actually recorded — a lone
+  // "6mm" dropdown filters nothing and just adds a control to read past.
+  const beadSizeOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(products.map((p) => p.beadSize).filter(Boolean)),
+      ).sort() as string[],
     [products],
   );
 
@@ -82,16 +92,27 @@ export default function CollectionBrowser({
       )
         return false;
       if (selectedStone && p.stone !== selectedStone) return false;
+      if (selectedBeadSize && p.beadSize !== selectedBeadSize) return false;
       if (band && !band.test(p.price)) return false;
       return true;
     });
     const cmp = SORTS.find((s) => s.id === sort)?.cmp;
     if (cmp) list = [...list].sort(cmp);
     return list;
-  }, [products, selectedIntentions, selectedStone, selectedPrice, sort]);
+  }, [
+    products,
+    selectedIntentions,
+    selectedStone,
+    selectedBeadSize,
+    selectedPrice,
+    sort,
+  ]);
 
   const hasFilters =
-    selectedIntentions.length > 0 || Boolean(selectedStone) || Boolean(selectedPrice);
+    selectedIntentions.length > 0 ||
+    Boolean(selectedStone) ||
+    Boolean(selectedBeadSize) ||
+    Boolean(selectedPrice);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   function toggleIntention(id: string) {
@@ -102,6 +123,7 @@ export default function CollectionBrowser({
   function clearAll() {
     setSelectedIntentions([]);
     setSelectedStone("");
+    setSelectedBeadSize("");
     setSelectedPrice("");
   }
 
@@ -153,6 +175,21 @@ export default function CollectionBrowser({
               </option>
             ))}
           </SelectPill>
+
+          {beadSizeOptions.length > 1 && (
+            <SelectPill
+              aria-label="Filter by bead size"
+              value={selectedBeadSize}
+              onChange={(e) => setSelectedBeadSize(e.target.value)}
+            >
+              <option value="">Any bead size</option>
+              {beadSizeOptions.map((b) => (
+                <option key={b} value={b}>
+                  {b} beads
+                </option>
+              ))}
+            </SelectPill>
+          )}
 
           <SelectPill
             aria-label="Filter by price"

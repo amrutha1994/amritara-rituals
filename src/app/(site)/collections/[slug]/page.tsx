@@ -9,6 +9,7 @@ import {
 import ProductOrderPanel from "@/components/product-order-panel";
 import ProductGallery from "@/components/product-gallery";
 import {
+  displayName,
   hasOffer,
   isNewArrival,
   stockStatus,
@@ -36,16 +37,19 @@ export async function generateMetadata({
   if (!product) return { title: "Ritual not found" };
   const description = product.description || product.shortIntention;
   const url = `/collections/${slug}`;
+  // Bead size belongs in the title: two bracelets in the same stone are
+  // otherwise identical in a tab, a search result and a shared link.
+  const title = displayName(product);
   return {
-    title: product.name,
+    title,
     description,
     alternates: { canonical: url },
     openGraph: {
       type: "website",
-      title: product.name,
+      title,
       description,
       url,
-      images: [{ url: product.image, alt: product.name }],
+      images: [{ url: product.image, alt: title }],
     },
     twitter: { card: "summary_large_image", images: [product.image] },
   };
@@ -65,7 +69,7 @@ function productJsonLd(product: Product, slug: string) {
   return {
     "@context": "https://schema.org",
     "@type": "Product",
-    name: product.name,
+    name: displayName(product),
     description: product.description || product.shortIntention,
     sku: product.id,
     image: product.images.map((u) => (u.startsWith("http") ? u : absoluteUrl(u))),
@@ -124,7 +128,7 @@ export default async function ProductPage({
                 )}
               </div>
               <h1 className="mt-3 font-title text-3xl font-normal text-foreground sm:text-4xl">
-                {product.name}
+                {displayName(product)}
               </h1>
               <p className="mt-3 text-lg italic text-primary-deep">
                 {product.shortIntention}
