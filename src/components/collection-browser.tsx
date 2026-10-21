@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 
 import type { Intention } from "@/data/intentions";
-import type { Product } from "@/data/products";
+import { hasStone, stoneNames, type Product } from "@/data/products";
 import ProductCard from "@/components/product-card";
 
 /** Price bands (listed price, ₹). Boundaries chosen to keep each band populated. */
@@ -68,10 +68,20 @@ export default function CollectionBrowser({
     () => intentions.filter((i) => products.some((p) => p.intentions.includes(i.id))),
     [intentions, products],
   );
-  const stoneOptions = useMemo(
-    () => Array.from(new Set(products.map((p) => p.stone).filter(Boolean))).sort(),
-    [products],
-  );
+  // Every stone in the catalogue, listed once. A combination bracelet
+  // contributes each of its stones rather than its joint label, so "Citrine ·
+  // Green Aventurine" offers Citrine and Green Aventurine — never the pair as
+  // a third option. Deduped case-insensitively, keeping the first spelling met.
+  const stoneOptions = useMemo(() => {
+    const seen = new Map<string, string>();
+    for (const product of products) {
+      for (const stone of stoneNames(product)) {
+        const key = stone.toLowerCase();
+        if (!seen.has(key)) seen.set(key, stone);
+      }
+    }
+    return [...seen.values()].sort((a, b) => a.localeCompare(b));
+  }, [products]);
   // Stays hidden until at least two sizes are actually recorded — a lone
   // "6mm" dropdown filters nothing and just adds a control to read past.
   const beadSizeOptions = useMemo(
@@ -91,7 +101,7 @@ export default function CollectionBrowser({
         !p.intentions.some((id) => selectedIntentions.includes(id))
       )
         return false;
-      if (selectedStone && p.stone !== selectedStone) return false;
+      if (selectedStone && !hasStone(p, selectedStone)) return false;
       if (selectedBeadSize && p.beadSize !== selectedBeadSize) return false;
       if (band && !band.test(p.price)) return false;
       return true;
