@@ -44,3 +44,8 @@ next-env.d.ts
 
 # one-off content migration scripts (already applied to Sanity)
 scripts/
+
+# local back-office tooling: the offline receipt writer, its generator, and the
+# seeded sales-log CSV. Kept out of git because the generated receipt embeds the
+# logo (~228 KB) and the CSV carries customer names.
+tools/
