@@ -3,6 +3,14 @@ import type { IntentionId } from "@/data/intentions";
 /** Bracelet size identifiers (wrist-circumference based). */
 export type BraceletSizeId = "S" | "M" | "L";
 
+/**
+ * Bead diameter of a ready-made bracelet — distinct from `BraceletSizeId`,
+ * which is the wrist fit. Mirrors the stones' `BeadSize` union rather than
+ * importing it: `data/stones` already imports from this module, and importing
+ * back would make the two circular.
+ */
+export type ProductBeadSize = "6mm" | "8mm";
+
 export interface BraceletSize {
   id: BraceletSizeId;
   /** Human-friendly name, e.g. "Medium" */
@@ -39,6 +47,12 @@ export interface Product {
   name: string;
   /** Primary gemstone */
   stone: string;
+  /**
+   * Bead diameter (Sanity `beadSize`). Optional: décor objects have none, and a
+   * bracelet has none until it's been recorded in the Studio. Drives the
+   * collection filter and the size shown beside the name.
+   */
+  beadSize?: ProductBeadSize;
   /**
    * Effective price in INR — what the shopper actually pays and what every
    * total is computed from. Equals `originalPrice` when there's no offer, or the
@@ -101,6 +115,77 @@ export interface Product {
   dimensions?: string;
   /** Décor only — placement ids where the object is meant to live (car/wall/…). */
   placement?: string[];
+}
+
+/**
+ * The name as shoppers should see it, with the bead size appended when the name
+ * doesn't already spell one out: "Jade Bracelet" + 6mm reads "Jade Bracelet ·
+ * 6mm", while a legacy "Jade Bracelet (6mm)" is left exactly as authored.
+ *
+ * Two bracelets cut from the same stone differ only by bead size, so the size
+ * has to stay on the label or their cards become indistinguishable in the grid.
+ * Accepting both spellings means titles can be tidied in the Studio one at a
+ * time instead of needing a flag day where every name changes at once.
+ */
+export function displayName(product: Product): string {
+  if (!product.beadSize || /\d\s*mm/i.test(product.name)) return product.name;
+  return `${product.name} · ${product.beadSize}`;
+}
+
+/**
+ * Separators used between stones in a single `stone` string. Authors write
+ * combinations several ways — "Citrine · Green Aventurine", "Seven Chakra -
+ * Black Obsidian", and comma-and-"and" lists on the décor pieces — so all of
+ * them are recognised. The hyphen only counts when it's spaced, so a stone
+ * whose own name is hyphenated stays in one piece.
+ */
+const STONE_SEPARATORS = /\s*(?:[·•,&]|\s[-–]\s|\band\b)\s*/i;
+
+const STONE_ALIASES: Record<string, string> = {
+  "dyed jade": "Jade",
+  "green jade": "Jade",
+};
+
+/**
+ * The filter category a stone belongs to. Deliberately an explicit list rather
+ * than a rule that strips adjectives: "Dyed Jade" is jade and belongs with the
+ * rest of the jade, but "Red Tiger Eye" is its own stone and must not collapse
+ * into "Tiger Eye", and no general rule tells those two cases apart. Anything
+ * unlisted is its own category, so adding a stone needs no change here.
+ *
+ * Only the filter taxonomy is affected — a product's card still shows the stone
+ * exactly as authored, so a dyed jade bracelet still reads "Dyed Jade".
+ */
+function canonicalStone(stone: string): string {
+  return STONE_ALIASES[stone.toLowerCase()] ?? stone;
+}
+
+/**
+ * The individual stones a product is made of, split out of its `stone` string:
+ * "Citrine · Green Aventurine" reads as ["Citrine", "Green Aventurine"].
+ *
+ * A combination is a bracelet made of several stones, not a stone of its own,
+ * so the pieces are what shoppers should be able to filter by — otherwise a
+ * citrine-and-aventurine bracelet hides behind its own one-off label and never
+ * surfaces under either stone.
+ */
+export function stoneNames(product: Product): string[] {
+  return (product.stone ?? "")
+    .split(STONE_SEPARATORS)
+    // A trailing full stop ends one of the décor lists; nothing else relies on
+    // punctuation, so it's trimmed along with the surrounding space.
+    .map((part) => canonicalStone(part.replace(/\.+$/, "").trim()))
+    .filter(Boolean);
+}
+
+/**
+ * True when a product contains this stone. Compared whole and case-insensitively
+ * rather than by substring, so "Tiger Eye" doesn't sweep in "Red Tiger Eye" —
+ * those are separate stones in the catalogue, not the same one described twice.
+ */
+export function hasStone(product: Product, stone: string): boolean {
+  const wanted = stone.trim().toLowerCase();
+  return stoneNames(product).some((s) => s.toLowerCase() === wanted);
 }
 
 /** Stock state derived from a product's optional `remainingQuantity`. */

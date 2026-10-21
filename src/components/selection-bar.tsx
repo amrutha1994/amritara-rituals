@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { deliveryFeeFor } from "@/data/products";
+import { deliveryFeeFor, displayName } from "@/data/products";
 import { track } from "@/lib/analytics";
 import { useCatalog } from "@/components/catalog-provider";
 import { useSelection } from "@/components/selection-provider";
@@ -169,7 +169,7 @@ export default function SelectionBar() {
               >
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-foreground">
-                    {line.product.name}
+                    {displayName(line.product)}
                   </p>
                   <p className="text-xs text-muted">
                     Size {line.size} · {inr.format(line.product.price * line.qty)}
@@ -185,7 +185,7 @@ export default function SelectionBar() {
                     <button
                       type="button"
                       onClick={() => decrement(line.product.id, line.size)}
-                      aria-label={`Remove one ${line.product.name} size ${line.size}`}
+                      aria-label={`Remove one ${displayName(line.product)} size ${line.size}`}
                       className="flex h-6 w-6 items-center justify-center rounded-full border border-border text-primary-deep transition-colors hover:border-primary hover:bg-primary-soft"
                     >
                       −
@@ -196,7 +196,7 @@ export default function SelectionBar() {
                     <button
                       type="button"
                       onClick={() => add(line.product.id, line.size)}
-                      aria-label={`Add one ${line.product.name} size ${line.size}`}
+                      aria-label={`Add one ${displayName(line.product)} size ${line.size}`}
                       className="flex h-6 w-6 items-center justify-center rounded-full border border-border text-primary-deep transition-colors hover:border-primary hover:bg-primary-soft"
                     >
                       +
@@ -206,7 +206,7 @@ export default function SelectionBar() {
                   <button
                     type="button"
                     onClick={() => remove(line.product.id, line.size)}
-                    aria-label={`Remove ${line.product.name} size ${line.size} entirely`}
+                    aria-label={`Remove ${displayName(line.product)} size ${line.size} entirely`}
                     className="flex h-7 w-7 items-center justify-center rounded-full text-muted transition-colors hover:bg-primary-soft hover:text-primary"
                   >
                     <svg

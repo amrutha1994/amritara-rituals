@@ -10,7 +10,7 @@ import {
 } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import type { Product } from "@/data/products";
+import { displayName, type Product } from "@/data/products";
 import ProductOrderPanel from "@/components/product-order-panel";
 
 const inr = new Intl.NumberFormat("en-IN", {
@@ -71,7 +71,7 @@ function ProductSheet({
       className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"
-      aria-label={`Order ${product.name}`}
+      aria-label={`Order ${displayName(product)}`}
     >
       {/* Backdrop */}
       <button
@@ -112,7 +112,7 @@ function ProductSheet({
           <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-border">
             <Image
               src={product.image}
-              alt={product.name}
+              alt={displayName(product)}
               fill
               sizes="80px"
               className="object-cover"
@@ -123,7 +123,7 @@ function ProductSheet({
               {product.stone}
             </p>
             <h2 className="font-display text-xl font-medium text-foreground">
-              {product.name}
+              {displayName(product)}
             </h2>
             <p className="mt-0.5 font-semibold text-primary-deep">
               {inr.format(product.price)}

@@ -1,5 +1,6 @@
 import {
   deliveryFeeFor,
+  displayName,
   type BraceletSizeId,
   type DeliverySettings,
   type Product,
@@ -84,8 +85,10 @@ export interface CustomOrderLine {
 
 function lineText(line: OrderLine): string {
   // The [code] is the product's tracking id (SKU); it lets an order be matched
-  // back to an exact product even if names or prices change later.
-  const base = `[${line.product.id}] ${line.product.name} (${line.product.stone}) — Size ${line.size}`;
+  // back to an exact product even if names or prices change later. The name
+  // carries the bead size so the order stays readable at a glance — 6mm and 8mm
+  // of the same stone are different bracelets to pack.
+  const base = `[${line.product.id}] ${displayName(line.product)} (${line.product.stone}) — Size ${line.size}`;
   if (line.qty > 1) {
     return `${base} × ${line.qty} — ${inr.format(line.product.price)} each (${inr.format(
       line.product.price * line.qty,

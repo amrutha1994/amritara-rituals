@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 
 import type { Intention } from "@/data/intentions";
 import type { Product } from "@/data/products";
@@ -8,6 +8,12 @@ import CollectionBrowser from "@/components/collection-browser";
 import DecorBrowser from "@/components/decor-browser";
 
 type TabId = "bracelets" | "decor";
+
+/** The URL hash that deep-links each tab: `/#bracelets`, `/#decor`. */
+function tabFromHash(hash: string): TabId | null {
+  const h = hash.replace(/^#/, "");
+  return h === "bracelets" || h === "decor" ? h : null;
+}
 
 /** Per-tab subcopy — the tab label acts as the title, so this is the only intro line. */
 const COPY: Record<TabId, { subcopy: string }> = {
@@ -90,6 +96,31 @@ export default function CatalogTabs({
   const showTabs = decor.length > 0;
   const active: TabId = showTabs ? tab : "bracelets";
 
+  // Deep links: `/#decor` opens the décor tab and scrolls the collection into
+  // view. Read on mount (shared links, cross-page navigation) and on
+  // `hashchange` (in-page anchors, back/forward). The hash names no element, so
+  // the browser doesn't scroll by itself — we bring the section into view.
+  useEffect(() => {
+    if (!showTabs) return;
+    function sync() {
+      const fromHash = tabFromHash(window.location.hash);
+      if (!fromHash) return;
+      setTab(fromHash);
+      document.getElementById("collections")?.scrollIntoView();
+    }
+    sync();
+    window.addEventListener("hashchange", sync);
+    return () => window.removeEventListener("hashchange", sync);
+  }, [showTabs]);
+
+  // Switching tabs mirrors the choice into the URL so the address bar is always
+  // a shareable link to what's on screen. `replaceState` keeps the page where it
+  // is (no jump, no extra history entries) and fires no `hashchange`.
+  function selectTab(id: TabId) {
+    setTab(id);
+    window.history.replaceState(null, "", `#${id}`);
+  }
+
   const tabId = (id: TabId) => `${baseId}-tab-${id}`;
   const panelId = (id: TabId) => `${baseId}-panel-${id}`;
 
@@ -100,7 +131,7 @@ export default function CatalogTabs({
     e.preventDefault();
     const i = TABS.findIndex((t) => t.id === active);
     const next = TABS[(i + (e.key === "ArrowRight" ? 1 : TABS.length - 1)) % TABS.length];
-    setTab(next.id);
+    selectTab(next.id);
     document.getElementById(tabId(next.id))?.focus();
   }
 
@@ -128,7 +159,7 @@ export default function CatalogTabs({
                 aria-selected={selected}
                 aria-controls={panelId(id)}
                 tabIndex={selected ? 0 : -1}
-                onClick={() => setTab(id)}
+                onClick={() => selectTab(id)}
                 className={
                   "-mb-px flex flex-1 items-center justify-center gap-2 whitespace-nowrap border-b-2 px-4 py-3 text-sm font-medium transition-colors sm:text-base " +
                   (selected

@@ -1,6 +1,6 @@
 "use client";
 
-import { isSoldOut, type Product } from "@/data/products";
+import { displayName, isSoldOut, type Product } from "@/data/products";
 import { useProductSheet } from "@/components/product-sheet-provider";
 import { useSelection } from "@/components/selection-provider";
 
@@ -19,7 +19,7 @@ export default function CardAddButton({ product }: { product: Product }) {
       <button
         type="button"
         onClick={() => open(product)}
-        aria-label={`Pre-order ${product.name} (sold out)`}
+        aria-label={`Pre-order ${displayName(product)} (sold out)`}
         className="rounded-full border border-primary/40 px-4 py-2 text-sm font-medium text-primary-deep transition-colors hover:border-primary hover:bg-primary-soft"
       >
         Pre-order
@@ -33,8 +33,8 @@ export default function CardAddButton({ product }: { product: Product }) {
       onClick={() => open(product)}
       aria-label={
         selected
-          ? `Edit ${product.name} in your bag`
-          : `Add ${product.name} to your bag`
+          ? `Edit ${displayName(product)} in your bag`
+          : `Add ${displayName(product)} to your bag`
       }
       className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
         selected

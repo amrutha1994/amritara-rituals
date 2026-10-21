@@ -52,6 +52,7 @@ const PRODUCTS_QUERY = `*[_type == "product"] | order(orderRank asc){
   "id": code,
   name,
   stone,
+  beadSize,
   suggestedPrice,
   offerPercent,
   remainingQuantity,
@@ -69,6 +70,7 @@ interface RawProduct {
   id: string;
   name: string;
   stone: string | null;
+  beadSize: string | null;
   suggestedPrice: number;
   offerPercent: number | null;
   remainingQuantity: number | null;
@@ -92,6 +94,10 @@ function mapProduct(r: RawProduct): Product {
     id: r.id,
     name: r.name,
     stone: r.stone ?? "",
+    // Narrowed rather than cast: the field is a free string in GROQ, and an
+    // unset or stray value should read as "not recorded", never as a size.
+    beadSize:
+      r.beadSize === "6mm" || r.beadSize === "8mm" ? r.beadSize : undefined,
     // Effective price = the regular price with any Sanity offer applied. This is
     // what every total is computed from; delivery is added on top at order time
     // only when the order subtotal is below the free-delivery threshold.
