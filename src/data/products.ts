@@ -72,6 +72,12 @@ export interface Product {
    */
   offerPercent: number;
   /**
+   * Whether the shop-wide festive coupon skips this item (Sanity
+   * `excludeFromCoupon`). Unset/false means the coupon applies — every product
+   * is eligible unless it's deliberately opted out.
+   */
+  excludeFromCoupon?: boolean;
+  /**
    * Units left in stock (Sanity `remainingQuantity`). Optional:
    *   - `undefined` → stock not tracked; always orderable, nothing shown
    *   - `0` → sold out; ordering is disabled
@@ -254,6 +260,48 @@ export interface Announcement {
 
 /** Fallback until the `settings` document is created: banner hidden. */
 export const DEFAULT_ANNOUNCEMENT: Announcement = { enabled: false, text: "" };
+
+/**
+ * The shop-wide festive coupon from the Sanity `settings` singleton: one code a
+ * shopper enters in their bag for an instant `percent` off every eligible item
+ * (all products except those flagged `excludeFromCoupon`; custom bracelets are
+ * always eligible). `code` is stored upper-cased so matching is case-blind.
+ */
+export interface Coupon {
+  /** On only when switched on in Studio *and* a code + percent are set. */
+  enabled: boolean;
+  code: string;
+  percent: number;
+}
+
+/** Fallback until the `settings` document has a coupon: no coupon. */
+export const DEFAULT_COUPON: Coupon = { enabled: false, code: "", percent: 10 };
+
+/** Normalise typed input for comparison: trimmed, upper-cased. */
+export function normaliseCouponCode(input: string): string {
+  return input.trim().toUpperCase();
+}
+
+/** True when `input` is the live coupon's code. */
+export function couponMatches(input: string, coupon: Coupon): boolean {
+  return coupon.enabled && normaliseCouponCode(input) === coupon.code;
+}
+
+/** Whether the coupon may discount this product. */
+export function isCouponEligible(product: Product): boolean {
+  return !product.excludeFromCoupon;
+}
+
+/**
+ * Rupees off an amount, rounded to the nearest rupee. Callers apply it to one
+ * unit's price and multiply by quantity, so the product page, bag and WhatsApp
+ * message all show the same per-item figure. Percent is clamped to 0–100 so a
+ * bad value can't overshoot.
+ */
+export function couponDiscountFor(amount: number, percent: number): number {
+  const pct = Math.min(Math.max(percent || 0, 0), 100);
+  return Math.round((amount * pct) / 100);
+}
 
 /**
  * Delivery fee for an order subtotal: the flat `charge` while under the

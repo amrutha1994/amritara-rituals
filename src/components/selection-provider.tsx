@@ -15,11 +15,17 @@ import type { BeadSize } from "@/data/stones";
 // memory for the session (no persistence, no backend). It exists so a visitor
 // can gather a few rituals and send them as a single WhatsApp message.
 //
-// Each line is a unique product + size, with a quantity. Adding the same
+// Each line is a unique product + size (no size for décor), with a quantity. Adding the same
 // product + size again increases the quantity rather than creating a new line.
+/**
+ * A bag line's size: a wrist size for bracelets, or `null` for Stone Décor
+ * pieces, which have no size — a décor line is just the product + quantity.
+ */
+export type LineSize = BraceletSizeId | null;
+
 export interface SelectionItem {
   productId: string;
-  size: BraceletSizeId;
+  size: LineSize;
   qty: number;
 }
 
@@ -41,11 +47,11 @@ interface SelectionContextValue {
   items: SelectionItem[];
   customItems: CustomItem[];
   /** Add one of a product + size (creates the line, or increments its qty). */
-  add: (productId: string, size: BraceletSizeId) => void;
+  add: (productId: string, size: LineSize) => void;
   /** Remove one of a product + size (deletes the line if qty hits zero). */
-  decrement: (productId: string, size: BraceletSizeId) => void;
+  decrement: (productId: string, size: LineSize) => void;
   /** Remove a product + size line entirely, whatever its quantity. */
-  remove: (productId: string, size: BraceletSizeId) => void;
+  remove: (productId: string, size: LineSize) => void;
   /** Remove one unit of a product, newest line first (for the card's −). */
   decrementProduct: (productId: string) => void;
   /** Add a designed custom bracelet as a new line; returns its generated id. */
@@ -57,8 +63,17 @@ interface SelectionContextValue {
   /** Remove a custom line entirely. */
   removeCustom: (id: string) => void;
   clear: () => void;
+  /**
+   * The coupon code the shopper has applied, as typed, or `null`. One code per
+   * visit: entered once anywhere (product page, popup, customiser or bag), it
+   * covers every eligible item in the order. `useAppliedCoupon` validates it
+   * against the live coupon.
+   */
+  couponCode: string | null;
+  applyCoupon: (code: string) => void;
+  removeCoupon: () => void;
   /** Quantity of a specific product + size. */
-  qtyOf: (productId: string, size: BraceletSizeId) => number;
+  qtyOf: (productId: string, size: LineSize) => number;
   /** Total quantity across all sizes of a product. */
   productQty: (productId: string) => number;
   /** Total quantity across the whole selection (catalogue + custom). */
@@ -67,7 +82,7 @@ interface SelectionContextValue {
 
 const SelectionContext = createContext<SelectionContextValue | null>(null);
 
-const sameLine = (a: SelectionItem, productId: string, size: BraceletSizeId) =>
+const sameLine = (a: SelectionItem, productId: string, size: LineSize) =>
   a.productId === productId && a.size === size;
 
 function makeId(): string {
@@ -80,8 +95,11 @@ function makeId(): string {
 export function SelectionProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<SelectionItem[]>([]);
   const [customItems, setCustomItems] = useState<CustomItem[]>([]);
+  const [couponCode, setCouponCode] = useState<string | null>(null);
+  const applyCoupon = useCallback((code: string) => setCouponCode(code), []);
+  const removeCoupon = useCallback(() => setCouponCode(null), []);
 
-  const add = useCallback((productId: string, size: BraceletSizeId) => {
+  const add = useCallback((productId: string, size: LineSize) => {
     setItems((prev) => {
       const idx = prev.findIndex((i) => sameLine(i, productId, size));
       if (idx === -1) return [...prev, { productId, size, qty: 1 }];
@@ -91,7 +109,7 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const decrement = useCallback((productId: string, size: BraceletSizeId) => {
+  const decrement = useCallback((productId: string, size: LineSize) => {
     setItems((prev) => {
       const idx = prev.findIndex((i) => sameLine(i, productId, size));
       if (idx === -1) return prev;
@@ -105,7 +123,7 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const remove = useCallback((productId: string, size: BraceletSizeId) => {
+  const remove = useCallback((productId: string, size: LineSize) => {
     setItems((prev) => prev.filter((i) => !sameLine(i, productId, size)));
   }, []);
 
@@ -164,7 +182,7 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const qtyOf = useCallback(
-    (productId: string, size: BraceletSizeId) =>
+    (productId: string, size: LineSize) =>
       items.find((i) => sameLine(i, productId, size))?.qty ?? 0,
     [items],
   );
@@ -197,6 +215,9 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
       decrementCustom,
       removeCustom,
       clear,
+      couponCode,
+      applyCoupon,
+      removeCoupon,
       qtyOf,
       productQty,
       count,
@@ -213,6 +234,9 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
       decrementCustom,
       removeCustom,
       clear,
+      couponCode,
+      applyCoupon,
+      removeCoupon,
       qtyOf,
       productQty,
       count,

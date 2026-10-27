@@ -19,6 +19,7 @@ import { useCatalog } from "@/components/catalog-provider";
 import { useSelection } from "@/components/selection-provider";
 import { useToast } from "@/components/toast-provider";
 import SizeChart from "@/components/size-chart";
+import CouponField, { useProductCoupon } from "@/components/coupon-field";
 
 function WhatsAppIcon({ className }: { className?: string }) {
   return (
@@ -34,6 +35,7 @@ export default function ProductOrderPanel({ product }: { product: Product }) {
   const { add, decrement, qtyOf } = useSelection();
   const { delivery } = useCatalog();
   const { show } = useToast();
+  const coupon = useProductCoupon(product);
 
   const qty = size ? qtyOf(product.id, size) : 0;
 
@@ -56,7 +58,7 @@ export default function ProductOrderPanel({ product }: { product: Product }) {
     });
     const imageUrl = toAbsoluteImageUrl(product.image, window.location.origin);
     window.open(
-      buildProductOrderLink(product, size, delivery, imageUrl),
+      buildProductOrderLink(product, size, delivery, imageUrl, coupon),
       "_blank",
       "noopener,noreferrer",
     );
@@ -206,6 +208,8 @@ export default function ProductOrderPanel({ product }: { product: Product }) {
             <WhatsAppIcon className="h-5 w-5" />
             Order on WhatsApp
           </button>
+
+          <CouponField product={product} />
 
           {qty === 0 ? (
             <button

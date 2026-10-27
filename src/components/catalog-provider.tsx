@@ -29,7 +29,10 @@ export function CatalogProvider({
   children: ReactNode;
 }) {
   const ctx = useMemo<CatalogValue>(() => {
-    const productMap = new Map(value.products.map((p) => [p.id, p]));
+    // Décor shares the bag with bracelets, so look-ups cover both lines.
+    const productMap = new Map(
+      [...value.products, ...value.decor].map((p) => [p.id, p]),
+    );
     const stoneMap = new Map(value.stones.map((s) => [s.id, s]));
     const intentionMap = new Map(value.intentions.map((i) => [i.id, i]));
     return {

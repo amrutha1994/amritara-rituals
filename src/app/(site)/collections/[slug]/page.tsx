@@ -3,25 +3,18 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import {
   getAllProducts,
-  getDeliverySettings,
   getProductBySlug,
 } from "@/sanity/queries";
 import ProductOrderPanel from "@/components/product-order-panel";
+import DetailPrice from "@/components/detail-price";
 import ProductGallery from "@/components/product-gallery";
 import {
   displayName,
-  hasOffer,
   isNewArrival,
   stockStatus,
   type Product,
 } from "@/data/products";
 import { SITE_NAME, absoluteUrl } from "@/lib/site";
-
-const inr = new Intl.NumberFormat("en-IN", {
-  style: "currency",
-  currency: "INR",
-  maximumFractionDigits: 0,
-});
 
 // Pre-render a page for every product at build time.
 export async function generateStaticParams() {
@@ -88,10 +81,7 @@ export default async function ProductPage({
   params,
 }: PageProps<"/collections/[slug]">) {
   const { slug } = await params;
-  const [product, delivery] = await Promise.all([
-    getProductBySlug(slug),
-    getDeliverySettings(),
-  ]);
+  const product = await getProductBySlug(slug);
   if (!product) notFound();
 
   return (
@@ -133,26 +123,7 @@ export default async function ProductPage({
               <p className="mt-3 text-lg italic text-primary-deep">
                 {product.shortIntention}
               </p>
-              <div className="mt-5 flex flex-wrap items-baseline gap-3">
-                <p className="text-2xl font-semibold text-primary-deep">
-                  {inr.format(product.price)}
-                </p>
-                {hasOffer(product) && (
-                  <>
-                    <p className="text-lg text-muted line-through">
-                      {inr.format(product.originalPrice)}
-                    </p>
-                    <span className="rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-white">
-                      {product.offerPercent}% off
-                    </span>
-                  </>
-                )}
-              </div>
-              <p className="mt-1 text-sm text-muted">
-                {product.price >= delivery.freeThreshold
-                  ? "Free delivery at checkout"
-                  : `+ ${inr.format(delivery.charge)} delivery at checkout`}
-              </p>
+              <DetailPrice product={product} showDelivery />
 
               <p className="mt-6 text-base leading-8 text-muted">
                 {product.description}

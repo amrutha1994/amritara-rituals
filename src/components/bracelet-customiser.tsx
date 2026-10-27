@@ -11,7 +11,11 @@ import {
   fromPrice,
   type BeadSize,
 } from "@/data/stones";
-import { BRACELET_SIZES, type BraceletSizeId } from "@/data/products";
+import {
+  BRACELET_SIZES,
+  couponDiscountFor,
+  type BraceletSizeId,
+} from "@/data/products";
 import {
   buildCustomOrderLink,
   toAbsoluteImageUrl,
@@ -20,6 +24,7 @@ import {
 import { track } from "@/lib/analytics";
 import { useCatalog } from "@/components/catalog-provider";
 import { useSelection } from "@/components/selection-provider";
+import CouponField, { useAppliedCoupon } from "@/components/coupon-field";
 import { useToast } from "@/components/toast-provider";
 import SizeChart from "@/components/size-chart";
 
@@ -71,6 +76,8 @@ export default function BraceletCustomiser({
   const { stones, delivery } = useCatalog();
   const { addCustom } = useSelection();
   const { show } = useToast();
+  // Custom bracelets are always eligible, so the applied coupon covers them.
+  const coupon = useAppliedCoupon();
 
   const availableStones = useMemo(
     () => (beadSize ? stonesBySize(stones, beadSize) : []),
@@ -85,6 +92,10 @@ export default function BraceletCustomiser({
   const price = priceBreakdownForStones(stoneIds, stones);
   const unitPrice = price.total;
   const totalPrice = unitPrice * qty;
+  // Custom bracelets are always coupon-eligible. Rounded per bracelet, to match
+  // the bag and the order message.
+  const couponDiscount = coupon ? couponDiscountFor(unitPrice, coupon.percent) * qty : 0;
+  const payable = totalPrice - couponDiscount;
   const atMax = stoneIds.length >= MAX_STONES;
   const isCombo = chosenStones.length > 1;
 
@@ -121,7 +132,13 @@ export default function BraceletCustomiser({
 
   const handleAddToBag = () => {
     if (!validate() || !beadSize || !wrist) return;
-    addCustom({ beadSize, stoneIds, size: wrist, qty, unitPrice });
+    addCustom({
+      beadSize,
+      stoneIds,
+      size: wrist,
+      qty,
+      unitPrice,
+    });
     track("add_to_bag", {
       type: "custom",
       bead_size: beadSize,
@@ -158,7 +175,7 @@ export default function BraceletCustomiser({
       qty,
       value: unitPrice * qty,
     });
-    window.open(buildCustomOrderLink(line, delivery), "_blank", "noopener,noreferrer");
+    window.open(buildCustomOrderLink(line, delivery, coupon), "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -416,20 +433,30 @@ export default function BraceletCustomiser({
                 )}
               </div>
             )}
+            {coupon && chosenStones.length > 0 && (
+              <div className="mb-2 flex items-center justify-between text-xs text-primary-deep">
+                <span>
+                  Coupon {coupon.code} · {coupon.percent}% off
+                </span>
+                <span>− {inr.format(couponDiscount)}</span>
+              </div>
+            )}
             <div className="flex items-baseline justify-between">
               <span className="text-sm text-muted">Total</span>
               <span className="text-2xl font-semibold text-primary-deep">
-                {chosenStones.length === 0 ? "—" : inr.format(totalPrice)}
+                {chosenStones.length === 0 ? "—" : inr.format(payable)}
               </span>
             </div>
             {chosenStones.length > 0 && (
               <p className="mt-1 text-xs text-muted">
-                {totalPrice >= delivery.freeThreshold
+                {payable >= delivery.freeThreshold
                   ? "Free delivery at checkout"
                   : `+ ${inr.format(delivery.charge)} delivery at checkout`}
               </p>
             )}
           </div>
+
+          <CouponField className="mt-4" />
 
           {error && <p className="mt-3 text-sm text-primary-deep">{error}</p>}
 

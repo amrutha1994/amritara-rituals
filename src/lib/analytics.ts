@@ -32,8 +32,12 @@ export function track(name: AnalyticsEvent, params?: EventParams): void {
  *   - `whatsapp_order`    — clicked "Order on WhatsApp" (the key conversion)
  *   - `whatsapp_preorder` — clicked "Pre-order" on a sold-out product (demand signal)
  *   - `add_to_bag`        — added an item to the bag
+ *   - `coupon_applied`    — entered the live festive coupon code
+ *   - `coupon_rejected`   — entered a code that didn't match (typo / expired)
  */
 export type AnalyticsEvent =
   | "whatsapp_order"
   | "whatsapp_preorder"
-  | "add_to_bag";
+  | "add_to_bag"
+  | "coupon_applied"
+  | "coupon_rejected";
