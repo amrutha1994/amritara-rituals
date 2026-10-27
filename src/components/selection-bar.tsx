@@ -1,12 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { deliveryFeeFor, displayName } from "@/data/products";
+import { deliveryFeeFor, displayName, isCouponEligible } from "@/data/products";
 import { track } from "@/lib/analytics";
 import { useCatalog } from "@/components/catalog-provider";
 import { useSelection } from "@/components/selection-provider";
+import CouponField, { useAppliedCoupon } from "@/components/coupon-field";
 import {
   buildSelectionOrderLink,
+  customLineDiscount,
+  lineDiscount,
+  selectionTotals,
   toAbsoluteImageUrl,
   type OrderLine,
   type CustomOrderLine,
@@ -17,6 +21,32 @@ const inr = new Intl.NumberFormat("en-IN", {
   currency: "INR",
   maximumFractionDigits: 0,
 });
+
+/** Screen-reader name for a bag line: "Jade Bracelet size M", or just the name for décor. */
+function lineLabel(line: OrderLine): string {
+  const name = displayName(line.product);
+  return line.size ? `${name} size ${line.size}` : name;
+}
+
+/** A bag line's price — reduced, with the full price struck, once the coupon is on it. */
+function LinePrice({
+  total,
+  discount,
+  code,
+}: {
+  total: number;
+  discount: number;
+  code?: string;
+}) {
+  if (discount <= 0) return <>{inr.format(total)}</>;
+  return (
+    <>
+      <span className="font-medium text-primary-deep">{inr.format(total - discount)}</span>{" "}
+      <span className="line-through">{inr.format(total)}</span>
+      {code && <span className="text-primary-deep"> · {code}</span>}
+    </>
+  );
+}
 
 export default function SelectionBar() {
   const {
@@ -33,14 +63,25 @@ export default function SelectionBar() {
   } = useSelection();
   const { getProduct, getStone, delivery } = useCatalog();
   const [open, setOpen] = useState(false);
+  // One code for the whole order: once applied anywhere, every eligible line
+  // (all but products excluded in Sanity) is discounted.
+  const coupon = useAppliedCoupon();
+  const couponApplied = coupon !== null;
 
   if (count === 0) return null;
 
   // Resolve selected ids back to full products for display + messaging.
   const lines: OrderLine[] = items
-    .map((i) => {
+    .map((i): OrderLine | null => {
       const product = getProduct(i.productId);
-      return product ? { product, size: i.size, qty: i.qty } : null;
+      return product
+        ? {
+            product,
+            size: i.size,
+            qty: i.qty,
+            couponApplied,
+          }
+        : null;
     })
     .filter((l): l is OrderLine => l !== null);
 
@@ -53,14 +94,18 @@ export default function SelectionBar() {
       size: c.size,
       qty: c.qty,
       unitPrice: c.unitPrice,
+      couponApplied,
       stones,
     };
   });
 
-  const total =
-    lines.reduce((sum, l) => sum + l.product.price * l.qty, 0) +
-    customLines.reduce((sum, c) => sum + c.unitPrice * c.qty, 0);
-  const deliveryFee = deliveryFeeFor(total, delivery);
+  const { subtotal: total, discount, payable } = selectionTotals(
+    lines,
+    customLines,
+    coupon,
+  );
+  // Free delivery is judged on what the shopper actually pays, after the coupon.
+  const deliveryFee = deliveryFeeFor(payable, delivery);
   const noun = count === 1 ? "ritual" : "rituals";
 
   // Build the order link on click so we can use the live origin for the photo
@@ -73,10 +118,17 @@ export default function SelectionBar() {
       size: c.size,
       qty: c.qty,
       unitPrice: c.unitPrice,
+      couponApplied: c.couponApplied,
       imageUrls: c.stones.map((s) => toAbsoluteImageUrl(s.image, origin)),
     }));
-    track("whatsapp_order", { type: "bag", items: count, value: total });
-    const link = buildSelectionOrderLink(lines, customOrderLines, delivery, origin);
+    track("whatsapp_order", { type: "bag", items: count, value: payable });
+    const link = buildSelectionOrderLink(
+      lines,
+      customOrderLines,
+      delivery,
+      origin,
+      coupon,
+    );
     window.open(link, "_blank", "noopener,noreferrer");
   };
 
@@ -111,7 +163,12 @@ export default function SelectionBar() {
                   </p>
                   <p className="truncate text-xs text-muted">
                     {line.stones.map((s) => s.name).join(", ") || "No stones"} ·
-                    Size {line.size} · {inr.format(line.unitPrice * line.qty)}
+                    Size {line.size} ·{" "}
+                    <LinePrice
+                      total={line.unitPrice * line.qty}
+                      discount={customLineDiscount(line, coupon)}
+                      code={coupon?.code}
+                    />
                   </p>
                 </div>
 
@@ -172,9 +229,17 @@ export default function SelectionBar() {
                     {displayName(line.product)}
                   </p>
                   <p className="text-xs text-muted">
-                    Size {line.size} · {inr.format(line.product.price * line.qty)}
+                    {line.size && <>Size {line.size} · </>}
+                    <LinePrice
+                      total={line.product.price * line.qty}
+                      discount={lineDiscount(line, coupon)}
+                      code={coupon?.code}
+                    />
                     {line.qty > 1 && (
                       <span> ({inr.format(line.product.price)} each)</span>
+                    )}
+                    {coupon && !isCouponEligible(line.product) && (
+                      <span> · not part of the coupon offer</span>
                     )}
                   </p>
                 </div>
@@ -185,7 +250,7 @@ export default function SelectionBar() {
                     <button
                       type="button"
                       onClick={() => decrement(line.product.id, line.size)}
-                      aria-label={`Remove one ${displayName(line.product)} size ${line.size}`}
+                      aria-label={`Remove one ${lineLabel(line)}`}
                       className="flex h-6 w-6 items-center justify-center rounded-full border border-border text-primary-deep transition-colors hover:border-primary hover:bg-primary-soft"
                     >
                       −
@@ -196,7 +261,7 @@ export default function SelectionBar() {
                     <button
                       type="button"
                       onClick={() => add(line.product.id, line.size)}
-                      aria-label={`Add one ${displayName(line.product)} size ${line.size}`}
+                      aria-label={`Add one ${lineLabel(line)}`}
                       className="flex h-6 w-6 items-center justify-center rounded-full border border-border text-primary-deep transition-colors hover:border-primary hover:bg-primary-soft"
                     >
                       +
@@ -206,7 +271,7 @@ export default function SelectionBar() {
                   <button
                     type="button"
                     onClick={() => remove(line.product.id, line.size)}
-                    aria-label={`Remove ${displayName(line.product)} size ${line.size} entirely`}
+                    aria-label={`Remove ${lineLabel(line)} entirely`}
                     className="flex h-7 w-7 items-center justify-center rounded-full text-muted transition-colors hover:bg-primary-soft hover:text-primary"
                   >
                     <svg
@@ -227,19 +292,30 @@ export default function SelectionBar() {
             ))}
           </ul>
 
+          {/* Shows "applied" if the code was already entered on a product page. */}
+          <CouponField className="mt-3 border-t border-border pt-3" />
+
           {/* Price breakdown — delivery is shown separately from the items. */}
           <div className="mt-3 flex flex-col gap-1 border-t border-border pt-3 text-sm">
             <div className="flex items-center justify-between text-muted">
               <span>Subtotal</span>
               <span>{inr.format(total)}</span>
             </div>
+            {discount > 0 && coupon && (
+              <div className="flex items-center justify-between text-primary-deep">
+                <span>
+                  Coupon {coupon.code} ({coupon.percent}% off)
+                </span>
+                <span>− {inr.format(discount)}</span>
+              </div>
+            )}
             <div className="flex items-center justify-between text-muted">
               <span>Delivery</span>
               <span>{deliveryFee > 0 ? inr.format(deliveryFee) : "FREE"}</span>
             </div>
             <div className="flex items-center justify-between font-semibold text-foreground">
               <span>Total</span>
-              <span>{inr.format(total + deliveryFee)}</span>
+              <span>{inr.format(payable + deliveryFee)}</span>
             </div>
           </div>
 
@@ -255,7 +331,7 @@ export default function SelectionBar() {
           className="flex flex-1 items-center gap-2 text-left text-sm font-medium"
         >
           <span>
-            {count} {noun} · {inr.format(total)}
+            {count} {noun} · {inr.format(payable)}
           </span>
           <svg
             width="16"

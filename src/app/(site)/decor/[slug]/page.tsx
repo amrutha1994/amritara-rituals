@@ -4,21 +4,15 @@ import type { Metadata } from "next";
 
 import { getDecorProducts, getDecorBySlug } from "@/sanity/queries";
 import DecorOrderPanel from "@/components/decor-order-panel";
+import DetailPrice from "@/components/detail-price";
 import ProductGallery from "@/components/product-gallery";
 import {
-  hasOffer,
   isNewArrival,
   stockStatus,
   type Product,
 } from "@/data/products";
 import { DECOR_ENABLED } from "@/lib/features";
 import { SITE_NAME, absoluteUrl } from "@/lib/site";
-
-const inr = new Intl.NumberFormat("en-IN", {
-  style: "currency",
-  currency: "INR",
-  maximumFractionDigits: 0,
-});
 
 // Pre-render a page per décor item — but only when the feature is on, so no
 // hidden URLs are generated while it's off.
@@ -84,8 +78,6 @@ export default async function DecorDetailPage({
   const product = await getDecorBySlug(slug);
   if (!product) notFound();
 
-  const onOffer = hasOffer(product);
-
   return (
     <main className="flex flex-1 flex-col">
       <script
@@ -127,21 +119,7 @@ export default async function DecorDetailPage({
                 </p>
               )}
 
-              <div className="mt-5 flex flex-wrap items-baseline gap-3">
-                <p className="text-2xl font-semibold text-primary-deep">
-                  {inr.format(product.price)}
-                </p>
-                {onOffer && (
-                  <>
-                    <p className="text-lg text-muted line-through">
-                      {inr.format(product.originalPrice)}
-                    </p>
-                    <span className="rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-white">
-                      {product.offerPercent}% off
-                    </span>
-                  </>
-                )}
-              </div>
+              <DetailPrice product={product} />
 
               {product.dimensions && (
                 <p className="mt-2 text-sm text-muted">Size: {product.dimensions}</p>

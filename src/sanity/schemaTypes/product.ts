@@ -83,6 +83,14 @@ export const productType = defineType({
       validation: (r) => r.min(0).max(100),
     }),
     defineField({
+      name: "excludeFromCoupon",
+      title: "Exclude from coupon",
+      type: "boolean",
+      description:
+        "Turn on to keep the festive coupon (set in Settings) from discounting this item. Off by default, so every item gets the coupon.",
+      initialValue: false,
+    }),
+    defineField({
       name: "remainingQuantity",
       title: "Remaining quantity (stock)",
       type: "number",

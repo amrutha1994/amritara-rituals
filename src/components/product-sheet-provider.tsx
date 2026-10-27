@@ -12,12 +12,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { displayName, type Product } from "@/data/products";
 import ProductOrderPanel from "@/components/product-order-panel";
-
-const inr = new Intl.NumberFormat("en-IN", {
-  style: "currency",
-  currency: "INR",
-  maximumFractionDigits: 0,
-});
+import DecorOrderPanel from "@/components/decor-order-panel";
+import DetailPrice from "@/components/detail-price";
 
 interface ProductSheetContextValue {
   /** Open the quick-order sheet for a product. */
@@ -66,6 +62,7 @@ function ProductSheet({
   product: Product;
   onClose: () => void;
 }) {
+  const isDecor = product.kind === "decor";
   return (
     <div
       className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center sm:p-4"
@@ -125,9 +122,8 @@ function ProductSheet({
             <h2 className="font-display text-xl font-medium text-foreground">
               {displayName(product)}
             </h2>
-            <p className="mt-0.5 font-semibold text-primary-deep">
-              {inr.format(product.price)}
-            </p>
+            {/* Updates to the coupon price as soon as the code is applied below. */}
+            <DetailPrice product={product} compact />
           </div>
         </div>
 
@@ -136,7 +132,7 @@ function ProductSheet({
           {product.description}
         </p>
         <Link
-          href={`/collections/${product.slug}`}
+          href={`${isDecor ? "/decor" : "/collections"}/${product.slug}`}
           onClick={onClose}
           className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-primary transition-colors hover:text-primary-deep"
         >
@@ -144,8 +140,13 @@ function ProductSheet({
           <span aria-hidden>→</span>
         </Link>
 
-        {/* Shared selection controls — identical to the detail page */}
-        <ProductOrderPanel key={product.id} product={product} />
+        {/* Shared selection controls — identical to the detail page. Décor has
+            no wrist size, so it gets its own (sizeless) panel. */}
+        {isDecor ? (
+          <DecorOrderPanel key={product.id} product={product} />
+        ) : (
+          <ProductOrderPanel key={product.id} product={product} />
+        )}
       </div>
     </div>
   );

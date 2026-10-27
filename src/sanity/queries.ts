@@ -5,9 +5,12 @@ import { cache } from "react";
 import type { Intention } from "@/data/intentions";
 import {
   DEFAULT_ANNOUNCEMENT,
+  DEFAULT_COUPON,
   DEFAULT_DELIVERY,
+  normaliseCouponCode,
   discountedPrice,
   type Announcement,
+  type Coupon,
   type DeliverySettings,
   type Product,
 } from "@/data/products";
@@ -55,6 +58,7 @@ const PRODUCTS_QUERY = `*[_type == "product"] | order(orderRank asc){
   beadSize,
   suggestedPrice,
   offerPercent,
+  excludeFromCoupon,
   remainingQuantity,
   show,
   isNew,
@@ -73,6 +77,7 @@ interface RawProduct {
   beadSize: string | null;
   suggestedPrice: number;
   offerPercent: number | null;
+  excludeFromCoupon: boolean | null;
   remainingQuantity: number | null;
   show: boolean | null;
   isNew: boolean | null;
@@ -104,6 +109,7 @@ function mapProduct(r: RawProduct): Product {
     price: discountedPrice(r.suggestedPrice, offerPercent),
     originalPrice: r.suggestedPrice,
     offerPercent,
+    excludeFromCoupon: r.excludeFromCoupon ?? false,
     remainingQuantity: r.remainingQuantity ?? undefined,
     show: r.show ?? true,
     // Unset (older documents authored before the flag existed) means not new.
@@ -144,6 +150,7 @@ const DECOR_QUERY = `*[_type == "decorProduct"] | order(orderRank asc){
   stone,
   suggestedPrice,
   offerPercent,
+  excludeFromCoupon,
   remainingQuantity,
   show,
   isNew,
@@ -270,7 +277,10 @@ const SETTINGS_QUERY = `*[_type == "settings"][0]{
   deliveryCharge,
   freeDeliveryThreshold,
   announcementEnabled,
-  announcementText
+  announcementText,
+  couponEnabled,
+  couponCode,
+  couponPercent
 }`;
 
 interface RawSettings {
@@ -278,6 +288,9 @@ interface RawSettings {
   freeDeliveryThreshold: number | null;
   announcementEnabled: boolean | null;
   announcementText: string | null;
+  couponEnabled: boolean | null;
+  couponCode: string | null;
+  couponPercent: number | null;
 }
 
 /** The `settings` singleton, or `null` until it's created. Deduped per request. */
@@ -311,6 +324,22 @@ export const getAnnouncement = cache(async (): Promise<Announcement> => {
   };
 });
 
+/**
+ * The festive coupon from the `settings` singleton. Only counts as enabled when
+ * the toggle is on, a code is set and the percent is positive, so a half-filled
+ * coupon can never be redeemed. Falls back to no coupon until settings exist.
+ */
+export const getCoupon = cache(async (): Promise<Coupon> => {
+  const raw = await getRawSettings();
+  const code = normaliseCouponCode(raw?.couponCode ?? DEFAULT_COUPON.code);
+  const percent = raw?.couponPercent ?? DEFAULT_COUPON.percent;
+  return {
+    enabled: Boolean(raw?.couponEnabled) && code.length > 0 && percent > 0,
+    code,
+    percent,
+  };
+});
+
 // ── Combined ─────────────────────────────────────────────────────────────────
 
 export interface Catalog {
@@ -319,20 +348,23 @@ export interface Catalog {
   intentions: Intention[];
   delivery: DeliverySettings;
   announcement: Announcement;
+  /** The festive coupon shoppers can redeem in their bag. */
+  coupon: Coupon;
   /** Stone Décor objects — empty until the feature flag is turned on. */
   decor: Product[];
 }
 
 /** The whole catalogue in one call — used to hydrate the client catalog context. */
 export const getCatalog = cache(async (): Promise<Catalog> => {
-  const [products, stones, intentions, delivery, announcement, decor] =
+  const [products, stones, intentions, delivery, announcement, coupon, decor] =
     await Promise.all([
       getAllProducts(),
       getAllStones(),
       getAllIntentions(),
       getDeliverySettings(),
       getAnnouncement(),
+      getCoupon(),
       getDecorProducts(),
     ]);
-  return { products, stones, intentions, delivery, announcement, decor };
+  return { products, stones, intentions, delivery, announcement, coupon, decor };
 });

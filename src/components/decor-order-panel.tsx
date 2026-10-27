@@ -1,6 +1,10 @@
 "use client";
 
-import { isSoldOut, stockLabel, type Product } from "@/data/products";
+import {
+  isSoldOut,
+  stockLabel,
+  type Product,
+} from "@/data/products";
 import {
   buildDecorOrderLink,
   buildDecorPreOrderLink,
@@ -8,6 +12,9 @@ import {
 } from "@/lib/whatsapp";
 import { track } from "@/lib/analytics";
 import { useCatalog } from "@/components/catalog-provider";
+import CouponField, { useProductCoupon } from "@/components/coupon-field";
+import { useSelection } from "@/components/selection-provider";
+import { useToast } from "@/components/toast-provider";
 
 function WhatsAppIcon({ className }: { className?: string }) {
   return (
@@ -18,12 +25,33 @@ function WhatsAppIcon({ className }: { className?: string }) {
 }
 
 /**
- * Order panel for a Stone Décor object. Deliberately simpler than the bracelet
- * panel — no wrist size and no shared bag — so this line stays isolated from the
- * size-based cart. It's a single WhatsApp order (or pre-order when sold out).
+ * Order panel for a Stone Décor object. Like the bracelet panel but sizeless:
+ * order one piece straight on WhatsApp, or add it to the shared bag (as a line
+ * with no size) to order alongside bracelets. Sold out → pre-order only.
  */
 export default function DecorOrderPanel({ product }: { product: Product }) {
   const { delivery } = useCatalog();
+  const coupon = useProductCoupon(product);
+  const { add, decrement, qtyOf } = useSelection();
+  const { show } = useToast();
+  // Décor lines in the bag carry no size.
+  const qty = qtyOf(product.id, null);
+
+  const handleAdd = () => {
+    add(product.id, null);
+    track("add_to_bag", {
+      type: "decor",
+      id: product.id,
+      name: product.name,
+      value: product.price,
+    });
+    show(`Added ${product.name}`);
+  };
+
+  const handleDecrement = () => {
+    decrement(product.id, null);
+    show(`Removed ${product.name}`);
+  };
   const soldOut = isSoldOut(product);
   const stock = stockLabel(product);
 
@@ -52,7 +80,7 @@ export default function DecorOrderPanel({ product }: { product: Product }) {
       value: product.price,
     });
     window.open(
-      buildDecorOrderLink(product, delivery, imageUrl),
+      buildDecorOrderLink(product, delivery, imageUrl, coupon),
       "_blank",
       "noopener,noreferrer",
     );
@@ -79,6 +107,43 @@ export default function DecorOrderPanel({ product }: { product: Product }) {
         <WhatsAppIcon className="h-5 w-5" />
         {soldOut ? "Pre-order on WhatsApp" : "Order on WhatsApp"}
       </button>
+
+      {!soldOut &&
+        (qty === 0 ? (
+          <button
+            type="button"
+            onClick={handleAdd}
+            className="mt-3 w-full rounded-full border border-border bg-surface px-7 py-3 text-center text-sm font-medium text-primary-deep transition-colors hover:border-primary"
+          >
+            Add to bag
+          </button>
+        ) : (
+          <div className="mt-3 flex items-center justify-between gap-3 rounded-full border border-primary bg-primary-soft px-3 py-2">
+            <button
+              type="button"
+              onClick={handleDecrement}
+              aria-label="Remove one from your bag"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-surface text-lg text-primary-deep shadow-sm transition-colors hover:bg-primary hover:text-white"
+            >
+              −
+            </button>
+            <span className="text-sm font-medium text-primary-deep">
+              {qty} in your bag
+            </span>
+            <button
+              type="button"
+              onClick={handleAdd}
+              aria-label="Add one to your bag"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-surface text-lg text-primary-deep shadow-sm transition-colors hover:bg-primary hover:text-white"
+            >
+              +
+            </button>
+          </div>
+        ))}
+
+      {!soldOut && (
+        <CouponField product={product} className="mt-3" />
+      )}
 
       {soldOut && (
         <p className="mt-2 text-xs text-muted">

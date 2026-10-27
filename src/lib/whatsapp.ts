@@ -1,7 +1,10 @@
 import {
+  couponDiscountFor,
   deliveryFeeFor,
   displayName,
+  isCouponEligible,
   type BraceletSizeId,
+  type Coupon,
   type DeliverySettings,
   type Product,
 } from "@/data/products";
@@ -37,6 +40,52 @@ function deliveryLine(fee: number): string {
 }
 
 /**
+ * The "you saved" summary line, or nothing when no discount applies. Item
+ * prices in the message are already the coupon prices, so this is a note, not
+ * a further deduction. The code is spelled out so the owner can check it
+ * against the live offer.
+ */
+function couponLines(coupon: Coupon | null | undefined, discount: number): string[] {
+  if (!coupon || discount <= 0) return [];
+  return [`Coupon ${coupon.code} (${coupon.percent}% off) — you saved ${inr.format(discount)}`];
+}
+
+/**
+ * The price part of an order row. With the coupon on it shows the reduced
+ * price — what the shopper is actually paying — plus the code and the regular
+ * price for reference, e.g. "₹585 — FESTIVE10 applied (was ₹650)".
+ */
+function priceText(
+  unitPrice: number,
+  qty: number,
+  unitDiscount: number,
+  coupon: Coupon | null | undefined,
+): string {
+  const unit = unitPrice - unitDiscount;
+  const price =
+    qty > 1
+      ? `${inr.format(unit)} each (${inr.format(unit * qty)})`
+      : inr.format(unit);
+  if (!coupon || unitDiscount <= 0) return price;
+  const was = qty > 1 ? `${inr.format(unitPrice)} each` : inr.format(unitPrice);
+  return `${price} — ${coupon.code} applied (was ${was})`;
+}
+
+/**
+ * Coupon discount on `qty` units at `unitPrice` (0 when ineligible / no
+ * coupon). Rounded per unit, so it always matches the reduced price shown on
+ * the product page and in the bag.
+ */
+function itemDiscount(
+  coupon: Coupon | null | undefined,
+  unitPrice: number,
+  eligible: boolean,
+  qty = 1,
+): number {
+  return coupon && eligible ? couponDiscountFor(unitPrice, coupon.percent) * qty : 0;
+}
+
+/**
  * Absolute URL for an image that may already be absolute (a Sanity CDN URL) or a
  * site-relative path (a local fallback). WhatsApp needs a full URL to render a
  * photo preview, so relative paths are prefixed with the current origin.
@@ -66,8 +115,11 @@ export function buildCustomEnquiryLink(): string {
 /** A bracelet + chosen size + quantity, used to compose an order message. */
 export interface OrderLine {
   product: Product;
-  size: BraceletSizeId;
+  /** Wrist size for a bracelet; `null` for a sizeless Stone Décor piece. */
+  size: BraceletSizeId | null;
   qty: number;
+  /** Whether the shopper applied the festive coupon to this item. */
+  couponApplied?: boolean;
 }
 
 /** A designed custom bracelet, used to compose an order message. */
@@ -81,33 +133,36 @@ export interface CustomOrderLine {
   unitPrice: number;
   /** Optional absolute photo URLs for the chosen stones (for previews). */
   imageUrls?: string[];
+  /** Whether the shopper applied the festive coupon to this design. */
+  couponApplied?: boolean;
 }
 
-function lineText(line: OrderLine): string {
+function lineText(line: OrderLine, coupon?: Coupon | null): string {
   // The [code] is the product's tracking id (SKU); it lets an order be matched
   // back to an exact product even if names or prices change later. The name
   // carries the bead size so the order stays readable at a glance — 6mm and 8mm
   // of the same stone are different bracelets to pack.
-  const base = `[${line.product.id}] ${displayName(line.product)} (${line.product.stone}) — Size ${line.size}`;
-  if (line.qty > 1) {
-    return `${base} × ${line.qty} — ${inr.format(line.product.price)} each (${inr.format(
-      line.product.price * line.qty,
-    )})`;
-  }
-  return `${base} — ${inr.format(line.product.price)}`;
+  const stone = line.product.stone ? ` (${line.product.stone})` : "";
+  // Décor pieces have no wrist size, so their row simply omits it.
+  const size = line.size ? ` — Size ${line.size}` : "";
+  const base = `[${line.product.id}] ${displayName(line.product)}${stone}${size}`;
+  const qty = line.qty > 1 ? ` × ${line.qty}` : "";
+  const unitDiscount = lineDiscount({ ...line, qty: 1 }, coupon);
+  return `${base}${qty} — ${priceText(line.product.price, line.qty, unitDiscount, coupon)}`;
 }
 
 /** A human-readable block describing one custom bracelet. */
-function customLineText(line: CustomOrderLine): string {
+function customLineText(line: CustomOrderLine, coupon?: Coupon | null): string {
   const stones = line.stoneNames.join(", ");
-  const priceTail =
-    line.qty > 1
-      ? `× ${line.qty} — ${inr.format(line.unitPrice)} each (${inr.format(
-          line.unitPrice * line.qty,
-        )})`
-      : `— ${inr.format(line.unitPrice)}`;
+  const qty = line.qty > 1 ? ` × ${line.qty}` : "";
+  const unitDiscount = customLineDiscount({ ...line, qty: 1 }, coupon);
   const rows = [
-    `Custom bracelet (${line.beadSize}) — Size ${line.size} ${priceTail}`,
+    `Custom bracelet (${line.beadSize}) — Size ${line.size}${qty} — ${priceText(
+      line.unitPrice,
+      line.qty,
+      unitDiscount,
+      coupon,
+    )}`,
     `   Stones: ${stones}`,
   ];
   if (line.imageUrls?.length) {
@@ -128,16 +183,20 @@ export function buildProductOrderText(
   size: BraceletSizeId,
   delivery: DeliverySettings,
   imageUrl?: string,
+  coupon?: Coupon | null,
 ): string {
-  const fee = deliveryFeeFor(product.price, delivery);
+  const discount = itemDiscount(coupon, product.price, isCouponEligible(product));
+  const payable = product.price - discount;
+  const fee = deliveryFeeFor(payable, delivery);
   return [
     "Hi Amritara Rituals!",
     "I'd like to order this ritual:",
-    `• ${lineText({ product, size, qty: 1 })}`,
+    `• ${lineText({ product, size, qty: 1, couponApplied: discount > 0 }, coupon)}`,
     ...(imageUrl ? ["", `Photo: ${imageUrl}`] : []),
     "",
+    ...couponLines(coupon, discount),
     deliveryLine(fee),
-    `Total: ${inr.format(product.price + fee)}`,
+    `Total: ${inr.format(payable + fee)}`,
     "",
     "Could you help me complete the order?",
   ].join("\n");
@@ -149,8 +208,9 @@ export function buildProductOrderLink(
   size: BraceletSizeId,
   delivery: DeliverySettings,
   imageUrl?: string,
+  coupon?: Coupon | null,
 ): string {
-  return waLink(buildProductOrderText(product, size, delivery, imageUrl));
+  return waLink(buildProductOrderText(product, size, delivery, imageUrl, coupon));
 }
 
 /**
@@ -162,16 +222,20 @@ export function buildDecorOrderText(
   product: Product,
   delivery: DeliverySettings,
   imageUrl?: string,
+  coupon?: Coupon | null,
 ): string {
-  const fee = deliveryFeeFor(product.price, delivery);
+  const discount = itemDiscount(coupon, product.price, isCouponEligible(product));
+  const payable = product.price - discount;
+  const fee = deliveryFeeFor(payable, delivery);
   return [
     "Hi Amritara Rituals!",
     "I'd like to order this piece:",
-    `• ${product.name} (${product.id}) — ${inr.format(product.price)}`,
+    `• ${product.name} (${product.id}) — ${priceText(product.price, 1, discount, coupon)}`,
     ...(imageUrl ? ["", `Photo: ${imageUrl}`] : []),
     "",
+    ...couponLines(coupon, discount),
     deliveryLine(fee),
-    `Total: ${inr.format(product.price + fee)}`,
+    `Total: ${inr.format(payable + fee)}`,
     "",
     "Could you help me complete the order?",
   ].join("\n");
@@ -182,8 +246,9 @@ export function buildDecorOrderLink(
   product: Product,
   delivery: DeliverySettings,
   imageUrl?: string,
+  coupon?: Coupon | null,
 ): string {
-  return waLink(buildDecorOrderText(product, delivery, imageUrl));
+  return waLink(buildDecorOrderText(product, delivery, imageUrl, coupon));
 }
 
 /** Deep link to pre-order a sold-out décor object (intent-to-buy, no total). */
@@ -236,16 +301,21 @@ export function buildPreOrderLink(
 export function buildCustomOrderText(
   line: CustomOrderLine,
   delivery: DeliverySettings,
+  coupon?: Coupon | null,
 ): string {
   const subtotal = line.unitPrice * line.qty;
-  const fee = deliveryFeeFor(subtotal, delivery);
+  // Custom bracelets are always coupon-eligible — there's no product to opt out.
+  const discount = itemDiscount(coupon, line.unitPrice, true, line.qty);
+  const payable = subtotal - discount;
+  const fee = deliveryFeeFor(payable, delivery);
   return [
     "Hi Amritara Rituals!",
     "I'd like to order this custom bracelet:",
-    `• ${customLineText(line)}`,
+    `• ${customLineText({ ...line, couponApplied: discount > 0 }, coupon)}`,
     "",
+    ...couponLines(coupon, discount),
     deliveryLine(fee),
-    `Total: ${inr.format(subtotal + fee)}`,
+    `Total: ${inr.format(payable + fee)}`,
     "",
     "Could you help me complete the order?",
   ].join("\n");
@@ -255,8 +325,48 @@ export function buildCustomOrderText(
 export function buildCustomOrderLink(
   line: CustomOrderLine,
   delivery: DeliverySettings,
+  coupon?: Coupon | null,
 ): string {
-  return waLink(buildCustomOrderText(line, delivery));
+  return waLink(buildCustomOrderText(line, delivery, coupon));
+}
+
+/** Coupon discount on one bag line (0 without the coupon, or if the product is excluded). */
+export function lineDiscount(line: OrderLine, coupon?: Coupon | null): number {
+  return line.couponApplied
+    ? itemDiscount(coupon, line.product.price, isCouponEligible(line.product), line.qty)
+    : 0;
+}
+
+/** Coupon discount on one custom bracelet line (0 without the coupon). */
+export function customLineDiscount(
+  line: Pick<CustomOrderLine, "unitPrice" | "qty" | "couponApplied">,
+  coupon?: Coupon | null,
+): number {
+  return line.couponApplied ? itemDiscount(coupon, line.unitPrice, true, line.qty) : 0;
+}
+
+/**
+ * Subtotal, coupon discount and amount payable (before delivery) for a bag. The
+ * coupon is one code for the whole order: lines are flagged `couponApplied`
+ * when it's on, and products flagged `excludeFromCoupon` are never discounted.
+ * Shared by the bag UI and the order message so the two can never disagree.
+ */
+export function selectionTotals(
+  lines: OrderLine[],
+  customLines: Pick<CustomOrderLine, "unitPrice" | "qty" | "couponApplied">[],
+  coupon?: Coupon | null,
+): { subtotal: number; discount: number; payable: number } {
+  let subtotal = 0;
+  let discount = 0;
+  for (const l of lines) {
+    subtotal += l.product.price * l.qty;
+    discount += lineDiscount(l, coupon);
+  }
+  for (const c of customLines) {
+    subtotal += c.unitPrice * c.qty;
+    discount += customLineDiscount(c, coupon);
+  }
+  return { subtotal, discount, payable: subtotal - discount };
 }
 
 /**
@@ -272,21 +382,26 @@ export function buildSelectionOrderLink(
   customLines: CustomOrderLine[],
   delivery: DeliverySettings,
   origin?: string,
+  coupon?: Coupon | null,
 ): string {
-  const total =
-    lines.reduce((sum, l) => sum + l.product.price * l.qty, 0) +
-    customLines.reduce((sum, c) => sum + c.unitPrice * c.qty, 0);
-  const fee = deliveryFeeFor(total, delivery);
+  const { discount, payable } = selectionTotals(
+    lines,
+    customLines,
+    coupon,
+  );
+  const fee = deliveryFeeFor(payable, delivery);
 
   // Continuous numbering across both kinds of line.
   let n = 0;
   const productRows = lines.map((l) => {
-    const row = `${++n}. ${lineText(l)}`;
+    const row = `${++n}. ${lineText(l, coupon)}`;
     return origin
       ? `${row}\n   Photo: ${toAbsoluteImageUrl(l.product.image, origin)}`
       : row;
   });
-  const customRows = customLines.map((c) => `${++n}. ${customLineText(c)}`);
+  const customRows = customLines.map(
+    (c) => `${++n}. ${customLineText(c, coupon)}`,
+  );
 
   const text = [
     "Hi Amritara Rituals!",
@@ -294,9 +409,11 @@ export function buildSelectionOrderLink(
     ...productRows,
     ...customRows,
     "",
-    `Subtotal: ${inr.format(total)}`,
+    // Item prices above are already the coupon prices, so the subtotal is too.
+    `Subtotal: ${inr.format(payable)}`,
+    ...couponLines(coupon, discount),
     deliveryLine(fee),
-    `Total: ${inr.format(total + fee)}`,
+    `Total: ${inr.format(payable + fee)}`,
     "Could you help me complete the order?",
   ].join("\n");
   return waLink(text);
