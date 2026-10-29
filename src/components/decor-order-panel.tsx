@@ -25,7 +25,8 @@ function WhatsAppIcon({ className }: { className?: string }) {
 }
 
 /**
- * Order panel for a Stone Décor object. Like the bracelet panel but sizeless:
+ * Order panel for a sizeless piece — a Stone Décor object or a pendant. Like
+ * the bracelet panel but with no wrist size:
  * order one piece straight on WhatsApp, or add it to the shared bag (as a line
  * with no size) to order alongside bracelets. Sold out → pre-order only.
  */
@@ -40,7 +41,7 @@ export default function DecorOrderPanel({ product }: { product: Product }) {
   const handleAdd = () => {
     add(product.id, null);
     track("add_to_bag", {
-      type: "decor",
+      type: product.kind ?? "decor",
       id: product.id,
       name: product.name,
       value: product.price,
@@ -61,7 +62,7 @@ export default function DecorOrderPanel({ product }: { product: Product }) {
     const imageUrl = toAbsoluteImageUrl(product.image, window.location.origin);
     if (soldOut) {
       track("whatsapp_preorder", {
-        type: "decor",
+        type: product.kind ?? "decor",
         id: product.id,
         name: product.name,
         value: product.price,
@@ -74,7 +75,7 @@ export default function DecorOrderPanel({ product }: { product: Product }) {
       return;
     }
     track("whatsapp_order", {
-      type: "decor",
+      type: product.kind ?? "decor",
       id: product.id,
       name: product.name,
       value: product.price,

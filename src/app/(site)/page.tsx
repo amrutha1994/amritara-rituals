@@ -1,7 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import CollectionsSection from "@/components/collections-section";
+import PendantsLaunchStrip from "@/components/pendants-launch-strip";
 import ContactSection from "@/components/contact-section";
+import FaqSection from "@/components/faq-section";
 import { BEAD_SIZES } from "@/data/stones";
 
 export default function Home() {
@@ -87,7 +89,10 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Product collection — bracelets + Stone Décor as tabs */}
+      {/* Pendants launch strip — only while a pendant is marked "New arrival" */}
+      <PendantsLaunchStrip />
+
+      {/* Product collection — bracelets, Stone Décor and Pendants as tabs */}
       <CollectionsSection />
 
       {/* Bead size guide */}
@@ -211,6 +216,9 @@ export default function Home() {
 
       {/* Antique-gold divider between sections */}
       <div className="gold-rule" />
+
+      {/* FAQs — all of them, right before the shopper decides to message */}
+      <FaqSection />
 
       {/* Contact */}
       <ContactSection />

@@ -126,7 +126,7 @@ export default async function DecorDetailPage({
               )}
 
               {product.description && (
-                <p className="mt-6 text-base leading-8 text-muted">
+                <p className="mt-6 text-base leading-8 text-muted whitespace-pre-line">
                   {product.description}
                 </p>
               )}

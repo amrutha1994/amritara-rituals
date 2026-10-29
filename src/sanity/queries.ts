@@ -2,6 +2,7 @@ import "server-only";
 
 import { cache } from "react";
 
+import type { Faq } from "@/data/faqs";
 import type { Intention } from "@/data/intentions";
 import {
   DEFAULT_ANNOUNCEMENT,
@@ -14,7 +15,7 @@ import {
   type DeliverySettings,
   type Product,
 } from "@/data/products";
-import { DECOR_ENABLED } from "@/lib/features";
+import { DECOR_ENABLED, PENDANTS_ENABLED } from "@/lib/features";
 import type { Stone } from "@/data/stones";
 
 import { client } from "./client";
@@ -115,7 +116,9 @@ function mapProduct(r: RawProduct): Product {
     // Unset (older documents authored before the flag existed) means not new.
     isNew: r.isNew ?? false,
     shortIntention: r.shortIntention ?? "",
-    description: r.description ?? "",
+    // Line breaks typed in the Studio are kept (pages render it with
+    // `whitespace-pre-line`); only stray blank lines at the ends are trimmed.
+    description: r.description?.trim() ?? "",
     benefits: r.benefits ?? undefined,
     image: gallery[0],
     images: gallery,
@@ -190,6 +193,57 @@ export const getDecorBySlug = cache(
   async (slug: string): Promise<Product | undefined> => {
     const products = await getDecorProducts();
     return products.find((p) => p.slug === slug);
+  },
+);
+
+// ── Pendants (stone pendants on a black thread) ─────────────────────────────
+// Same pattern as décor: its own document type mapped into the shared
+// `Product` shape (with `kind: "pendant"`), sizeless in the bag, and only
+// fetched once the feature flag is on.
+
+const PENDANTS_QUERY = `*[_type == "pendantProduct"] | order(orderRank asc){
+  "id": code,
+  name,
+  stone,
+  suggestedPrice,
+  offerPercent,
+  excludeFromCoupon,
+  remainingQuantity,
+  show,
+  isNew,
+  dimensions,
+  shortIntention,
+  description,
+  benefits,
+  "slug": slug.current,
+  "intentions": intentions[]->key.current,
+  "images": images[].asset->url
+}`;
+
+interface RawPendant extends RawProduct {
+  dimensions: string | null;
+}
+
+function mapPendant(r: RawPendant): Product {
+  return {
+    ...mapProduct(r),
+    kind: "pendant",
+    dimensions: r.dimensions ?? undefined,
+  };
+}
+
+/** All pendants, in display order. Empty when the flag is off. */
+export const getPendants = cache(async (): Promise<Product[]> => {
+  if (!PENDANTS_ENABLED) return [];
+  const raw = await client.fetch<RawPendant[]>(PENDANTS_QUERY, {}, fetchOptions);
+  return raw.map(mapPendant);
+});
+
+/** One pendant by slug (for /pendants/[slug]). */
+export const getPendantBySlug = cache(
+  async (slug: string): Promise<Product | undefined> => {
+    const pendants = await getPendants();
+    return pendants.find((p) => p.slug === slug);
   },
 );
 
@@ -340,6 +394,20 @@ export const getCoupon = cache(async (): Promise<Coupon> => {
   };
 });
 
+// ── FAQs ─────────────────────────────────────────────────────────────────────
+
+const FAQS_QUERY = `*[_type == "faq" && defined(question) && defined(answer)] | order(orderRank asc){
+  "id": _id,
+  question,
+  answer
+}`;
+
+/** Published FAQs in Studio order (drafts never show). Deduped per request. */
+export const getFaqs = cache(async (): Promise<Faq[]> => {
+  const raw = await client.fetch<Faq[]>(FAQS_QUERY, {}, fetchOptions);
+  return raw.map((f) => ({ ...f, answer: f.answer.trim() }));
+});
+
 // ── Combined ─────────────────────────────────────────────────────────────────
 
 export interface Catalog {
@@ -352,11 +420,13 @@ export interface Catalog {
   coupon: Coupon;
   /** Stone Décor objects — empty until the feature flag is turned on. */
   decor: Product[];
+  /** Pendants — empty until the feature flag is turned on. */
+  pendants: Product[];
 }
 
 /** The whole catalogue in one call — used to hydrate the client catalog context. */
 export const getCatalog = cache(async (): Promise<Catalog> => {
-  const [products, stones, intentions, delivery, announcement, coupon, decor] =
+  const [products, stones, intentions, delivery, announcement, coupon, decor, pendants] =
     await Promise.all([
       getAllProducts(),
       getAllStones(),
@@ -365,6 +435,16 @@ export const getCatalog = cache(async (): Promise<Catalog> => {
       getAnnouncement(),
       getCoupon(),
       getDecorProducts(),
+      getPendants(),
     ]);
-  return { products, stones, intentions, delivery, announcement, coupon, decor };
+  return {
+    products,
+    stones,
+    intentions,
+    delivery,
+    announcement,
+    coupon,
+    decor,
+    pendants,
+  };
 });

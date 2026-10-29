@@ -4,6 +4,7 @@ import {
   hasOffer,
   isNewArrival,
   isSoldOut,
+  productHref,
   stockLabel,
   type Product,
 } from "@/data/products";
@@ -17,9 +18,8 @@ const inr = new Intl.NumberFormat("en-IN", {
 });
 
 export default function ProductCard({ product }: { product: Product }) {
-  // Décor objects live under /decor; bracelets (the default) under /collections.
-  const base = product.kind === "decor" ? "/decor" : "/collections";
-  const href = `${base}/${product.slug}`;
+  // Bracelets live under /collections, décor under /decor, pendants under /pendants.
+  const href = productHref(product);
   const soldOut = isSoldOut(product);
   const stock = stockLabel(product);
   const onOffer = hasOffer(product);

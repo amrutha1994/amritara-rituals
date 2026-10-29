@@ -134,6 +134,8 @@ export const decorProductType = defineType({
       title: "Description",
       type: "text",
       rows: 4,
+      description:
+        "Line breaks show on the site exactly as typed — press Enter for a new line, or leave an empty line between paragraphs.",
     }),
     defineField({
       name: "benefits",

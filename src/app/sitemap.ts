@@ -1,8 +1,8 @@
 import type { MetadataRoute } from "next";
 
-import { getAllProducts, getDecorProducts } from "@/sanity/queries";
+import { getAllProducts, getDecorProducts, getPendants } from "@/sanity/queries";
 import { absoluteUrl } from "@/lib/site";
-import { DECOR_ENABLED } from "@/lib/features";
+import { DECOR_ENABLED, PENDANTS_ENABLED } from "@/lib/features";
 
 /**
  * The XML sitemap served at /sitemap.xml — every indexable storefront URL, so
@@ -28,6 +28,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: now,
       changeFrequency: "monthly",
       priority: 0.8,
+    },
+    {
+      url: absoluteUrl("/faq"),
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.6,
     },
   ];
 
@@ -57,5 +63,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ]
     : [];
 
-  return [...staticRoutes, ...productRoutes, ...decorRoutes];
+  // Pendants, likewise, only once that line is live.
+  const pendantRoutes: MetadataRoute.Sitemap = PENDANTS_ENABLED
+    ? [
+        {
+          url: absoluteUrl("/pendants"),
+          lastModified: now,
+          changeFrequency: "weekly",
+          priority: 0.8,
+        },
+        ...(await getPendants()).map((product) => ({
+          url: absoluteUrl(`/pendants/${product.slug}`),
+          lastModified: now,
+          changeFrequency: "weekly" as const,
+          priority: 0.7,
+        })),
+      ]
+    : [];
+
+  return [...staticRoutes, ...productRoutes, ...decorRoutes, ...pendantRoutes];
 }

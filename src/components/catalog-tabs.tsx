@@ -1,18 +1,18 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 
 import type { Intention } from "@/data/intentions";
-import type { Product } from "@/data/products";
+import { isNewArrival, type Product } from "@/data/products";
 import CollectionBrowser from "@/components/collection-browser";
 import DecorBrowser from "@/components/decor-browser";
 
-type TabId = "bracelets" | "decor";
+type TabId = "bracelets" | "decor" | "pendants";
 
-/** The URL hash that deep-links each tab: `/#bracelets`, `/#decor`. */
+/** The URL hash that deep-links each tab: `/#bracelets`, `/#decor`, `/#pendants`. */
 function tabFromHash(hash: string): TabId | null {
   const h = hash.replace(/^#/, "");
-  return h === "bracelets" || h === "decor" ? h : null;
+  return h === "bracelets" || h === "decor" || h === "pendants" ? h : null;
 }
 
 /** Per-tab subcopy — the tab label acts as the title, so this is the only intro line. */
@@ -23,6 +23,9 @@ const COPY: Record<TabId, { subcopy: string }> = {
   decor: {
     subcopy:
       "Natural-stone objects to carry an intention into your home, car and sacred spaces.",
+  },
+  pendants: {
+    subcopy: "One stone, worn close to your heart — on a simple black thread.",
   },
 };
 
@@ -67,34 +70,74 @@ function DecorIcon({ className }: IconProps) {
   );
 }
 
+// A teardrop stone hanging from a cord — same line weight as the other glyphs.
+function PendantIcon({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden
+    >
+      <path d="M4 3c1.5 5 4.5 8 8 8s6.5-3 8-8" />
+      <path d="M12 11c-2.4 2.6-3.5 4.6-3.5 6.2a3.5 3.5 0 0 0 7 0c0-1.6-1.1-3.6-3.5-6.2Z" />
+    </svg>
+  );
+}
+
 const TABS: { id: TabId; label: string; Icon: (p: IconProps) => React.ReactElement }[] = [
   { id: "bracelets", label: "Bracelets", Icon: BraceletIcon },
   { id: "decor", label: "For your space", Icon: DecorIcon },
+  { id: "pendants", label: "Pendants", Icon: PendantIcon },
 ];
 
 /**
- * The Collections section as two ranges the shopper switches between —
- * Bracelets (default) and Stone Décor — each with its own filters and grid.
+ * The Collections section as the ranges the shopper switches between —
+ * Bracelets (default), Stone Décor and Pendants — each with its own filters
+ * and grid.
  * A segmented, keyboard-navigable tablist styled like the header's pill nav.
  *
- * When there are no décor items (feature flag off, or none authored yet) the
- * tabs disappear and it renders exactly as the old bracelet-only section, so
- * nothing extra ever shows before the line is ready.
+ * A tab only shows once its line has items (feature flag on and something
+ * authored). With only bracelets, the tabs disappear entirely and it renders
+ * exactly as the old bracelet-only section, so nothing shows before it's ready.
  */
 export default function CatalogTabs({
   products,
   decor,
+  pendants,
   intentions,
 }: {
   products: Product[];
   decor: Product[];
+  pendants: Product[];
   intentions: Intention[];
 }) {
   const [tab, setTab] = useState<TabId>("bracelets");
   const baseId = useId();
 
-  const showTabs = decor.length > 0;
-  const active: TabId = showTabs ? tab : "bracelets";
+  // A tab only appears once its line has items (and its feature flag is on —
+  // the server returns [] while it's off).
+  const hasDecor = decor.length > 0;
+  const hasPendants = pendants.length > 0;
+  const tabs = useMemo(
+    () =>
+      TABS.filter(
+        (t) =>
+          t.id === "bracelets" ||
+          (t.id === "decor" && hasDecor) ||
+          (t.id === "pendants" && hasPendants),
+      ),
+    [hasDecor, hasPendants],
+  );
+  const showTabs = tabs.length > 1;
+  const active: TabId = tabs.some((t) => t.id === tab) ? tab : "bracelets";
+  // Launch signal: the Pendants tab wears a NEW badge while any pendant is
+  // marked "New arrival" in Sanity, and drops it once none are.
+  const pendantsNew = pendants.some(isNewArrival);
 
   // Deep links: `/#decor` opens the décor tab and scrolls the collection into
   // view. Read on mount (shared links, cross-page navigation) and on
@@ -105,13 +148,15 @@ export default function CatalogTabs({
     function sync() {
       const fromHash = tabFromHash(window.location.hash);
       if (!fromHash) return;
+      // Ignore a hash for a line that isn't live (e.g. an old `/#pendants` link).
+      if (!tabs.some((t) => t.id === fromHash)) return;
       setTab(fromHash);
       document.getElementById("collections")?.scrollIntoView();
     }
     sync();
     window.addEventListener("hashchange", sync);
     return () => window.removeEventListener("hashchange", sync);
-  }, [showTabs]);
+  }, [showTabs, tabs]);
 
   // Switching tabs mirrors the choice into the URL so the address bar is always
   // a shareable link to what's on screen. `replaceState` keeps the page where it
@@ -129,8 +174,8 @@ export default function CatalogTabs({
   function onKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
     if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
     e.preventDefault();
-    const i = TABS.findIndex((t) => t.id === active);
-    const next = TABS[(i + (e.key === "ArrowRight" ? 1 : TABS.length - 1)) % TABS.length];
+    const i = tabs.findIndex((t) => t.id === active);
+    const next = tabs[(i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
     selectTab(next.id);
     document.getElementById(tabId(next.id))?.focus();
   }
@@ -148,7 +193,7 @@ export default function CatalogTabs({
           onKeyDown={onKeyDown}
           className="mt-6 flex w-full border-b border-border"
         >
-          {TABS.map(({ id, label, Icon }) => {
+          {tabs.map(({ id, label, Icon }) => {
             const selected = active === id;
             return (
               <button
@@ -169,6 +214,11 @@ export default function CatalogTabs({
               >
                 <Icon className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
                 {label}
+                {id === "pendants" && pendantsNew && (
+                  <span className="rounded-full bg-crimson-deep px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-white">
+                    New
+                  </span>
+                )}
               </button>
             );
           })}
@@ -200,6 +250,18 @@ export default function CatalogTabs({
             hidden={active !== "decor"}
           >
             <DecorBrowser products={decor} intentions={intentions} />
+          </div>
+          <div
+            role="tabpanel"
+            id={panelId("pendants")}
+            aria-labelledby={tabId("pendants")}
+            hidden={active !== "pendants"}
+          >
+            <DecorBrowser
+              products={pendants}
+              intentions={intentions}
+              emptyCopy="Our pendants are being strung — check back shortly."
+            />
           </div>
         </>
       ) : (

@@ -16,3 +16,12 @@
  * the string "true".
  */
 export const DECOR_ENABLED = process.env.NEXT_PUBLIC_DECOR_ENABLED === "true";
+
+/**
+ * The Pendants line (natural-stone pendants on a black thread). Off by default
+ * so it can be stocked and previewed in the Studio before launch — its
+ * Collections tab, `/pendants` routes, homepage launch strip, Stone Finder and
+ * "complete the ritual" links and sitemap URLs all stay hidden until this is
+ * set to the string "true".
+ */
+export const PENDANTS_ENABLED = process.env.NEXT_PUBLIC_PENDANTS_ENABLED === "true";

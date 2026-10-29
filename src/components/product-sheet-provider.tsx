@@ -10,7 +10,12 @@ import {
 } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { displayName, type Product } from "@/data/products";
+import {
+  displayName,
+  isSizeless,
+  productHref,
+  type Product,
+} from "@/data/products";
 import ProductOrderPanel from "@/components/product-order-panel";
 import DecorOrderPanel from "@/components/decor-order-panel";
 import DetailPrice from "@/components/detail-price";
@@ -62,7 +67,7 @@ function ProductSheet({
   product: Product;
   onClose: () => void;
 }) {
-  const isDecor = product.kind === "decor";
+  const sizeless = isSizeless(product);
   return (
     <div
       className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center sm:p-4"
@@ -128,11 +133,11 @@ function ProductSheet({
         </div>
 
         {/* Description + a low-key path to the full product page */}
-        <p className="mt-4 text-sm leading-7 text-muted">
+        <p className="mt-4 text-sm leading-7 text-muted whitespace-pre-line">
           {product.description}
         </p>
         <Link
-          href={`${isDecor ? "/decor" : "/collections"}/${product.slug}`}
+          href={productHref(product)}
           onClick={onClose}
           className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-primary transition-colors hover:text-primary-deep"
         >
@@ -140,9 +145,9 @@ function ProductSheet({
           <span aria-hidden>→</span>
         </Link>
 
-        {/* Shared selection controls — identical to the detail page. Décor has
-            no wrist size, so it gets its own (sizeless) panel. */}
-        {isDecor ? (
+        {/* Shared selection controls — identical to the detail page. Décor and
+            pendants have no wrist size, so they get the sizeless panel. */}
+        {sizeless ? (
           <DecorOrderPanel key={product.id} product={product} />
         ) : (
           <ProductOrderPanel key={product.id} product={product} />

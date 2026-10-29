@@ -5,6 +5,7 @@ const FOOTER_NAV = [
   { label: "Collections", href: "#collections" },
   { label: "Our Story", href: "#story" },
   { label: "Contact", href: "#contact" },
+  { label: "FAQs", href: "/faq" },
 ] as const;
 
 const SOCIAL = [

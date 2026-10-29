@@ -3,13 +3,16 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import {
   getAllProducts,
+  getPendants,
   getProductBySlug,
 } from "@/sanity/queries";
+import CompleteTheRitual from "@/components/complete-the-ritual";
 import ProductOrderPanel from "@/components/product-order-panel";
 import DetailPrice from "@/components/detail-price";
 import ProductGallery from "@/components/product-gallery";
 import {
   displayName,
+  pairedPieces,
   isNewArrival,
   stockStatus,
   type Product,
@@ -81,7 +84,10 @@ export default async function ProductPage({
   params,
 }: PageProps<"/collections/[slug]">) {
   const { slug } = await params;
-  const product = await getProductBySlug(slug);
+  const [product, pendants] = await Promise.all([
+    getProductBySlug(slug),
+    getPendants(),
+  ]);
   if (!product) notFound();
 
   return (
@@ -125,7 +131,7 @@ export default async function ProductPage({
               </p>
               <DetailPrice product={product} showDelivery />
 
-              <p className="mt-6 text-base leading-8 text-muted">
+              <p className="mt-6 text-base leading-8 text-muted whitespace-pre-line">
                 {product.description}
               </p>
 
@@ -151,6 +157,12 @@ export default async function ProductPage({
               )}
 
               <ProductOrderPanel product={product} />
+
+              {/* The matching stone pendant (empty until pendants launch). */}
+              <CompleteTheRitual
+                items={pairedPieces(product, pendants, 1)}
+                copy="Wear the same stone close to your heart, on a simple black thread."
+              />
             </div>
           </div>
         </div>

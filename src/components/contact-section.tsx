@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import {
   WHATSAPP_DISPLAY,
   buildContactLink,
@@ -43,6 +45,12 @@ export default function ContactSection() {
             a chat before you order. Reach us on WhatsApp and we&apos;ll help you
             choose the right stones, size and ritual.
           </p>
+          <Link
+            href="/faq"
+            className="mt-3 inline-flex text-sm font-medium text-primary-deep underline-offset-4 transition-colors hover:text-primary hover:underline"
+          >
+            Read our FAQs →
+          </Link>
         </div>
 
         {/* WhatsApp card */}

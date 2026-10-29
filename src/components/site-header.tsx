@@ -32,6 +32,13 @@ const Icon = {
       <path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9l-4 4v-4H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" />
     </svg>
   ),
+  Faq: (p: IconProps) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className={p.className}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.6 9.3a2.5 2.5 0 0 1 4.8 1c0 1.7-2.4 2.2-2.4 3.7" />
+      <path d="M12 17.2h.01" />
+    </svg>
+  ),
   Customise: (p: IconProps) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className={p.className}>
       <path d="M12 3.5 13.6 8l4.5 1.6L13.6 11 12 15.5 10.4 11 5.9 9.6 10.4 8 12 3.5Z" />
@@ -48,6 +55,8 @@ const NAV_LINKS = [
   { label: "Customise", href: "/customise", icon: Icon.Customise },
   { label: "Our Story", href: "#story", icon: Icon.Story },
   { label: "Contact", href: "#contact", icon: Icon.Contact },
+  // "/#faq" (not "#faq") so it reaches the homepage FAQ section from any page.
+  { label: "FAQs", href: "/#faq", icon: Icon.Faq },
 ];
 
 export default function SiteHeader() {
@@ -86,13 +95,15 @@ export default function SiteHeader() {
                 href={link.href}
                 onClick={() => setActive(link.href)}
                 aria-current={isActive ? "page" : undefined}
-                className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                className={`flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition-colors lg:px-4 ${
                   isActive
                     ? "bg-primary-soft text-primary"
                     : "text-foreground/70 hover:bg-primary-soft/60 hover:text-primary"
                 }`}
               >
-                <IconCmp className="h-[18px] w-[18px]" />
+                {/* Icons from lg up only — six links with icons don't fit
+                    between the logo and Shop on a tablet-width screen. */}
+                <IconCmp className="hidden h-[18px] w-[18px] lg:block" />
                 {link.label}
               </Link>
             );

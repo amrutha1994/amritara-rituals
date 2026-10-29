@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { recommendStonesForIntention, productForStone } from "@/data/stones";
 import { useCatalog } from "@/components/catalog-provider";
+import { piecesForIntention, productHref, sharesStone } from "@/data/products";
+import CompleteTheRitual from "@/components/complete-the-ritual";
 import ProductImage from "@/components/product-image";
 
 /** How many stones the finder reveals for the chosen intention. */
@@ -14,6 +16,7 @@ export default function StoneFinder() {
     intentions: INTENTIONS,
     stones: allStones,
     products,
+    pendants,
     getIntention,
   } = useCatalog();
   const [intention, setIntention] = useState<string | null>(null);
@@ -28,6 +31,24 @@ export default function StoneFinder() {
         : [],
     [allStones, intention],
   );
+
+  // Pendants carrying this intention, for a "wear it as a pendant" row. Those
+  // already linked from a stone card above aren't repeated.
+  const linkedPendants = new Set(
+    stones.flatMap((stone) =>
+      pendants
+        .filter((p) => p.show && sharesStone(stone.name, p.stone))
+        .slice(0, 1)
+        .map((p) => p.id),
+    ),
+  );
+  const intentionPendants = intention
+    ? piecesForIntention(
+        intention,
+        pendants.filter((p) => !linkedPendants.has(p.id)),
+        4,
+      )
+    : [];
 
   const reset = () => {
     setRevealed(false);
@@ -58,6 +79,10 @@ export default function StoneFinder() {
             const href = product
               ? `/collections/${product.slug}`
               : `/customise?size=${stone.beadSize}&stones=${stone.id}`;
+            // The same stone as a pendant, when one's live (empty before launch).
+            const pendant = pendants.find(
+              (p) => p.show && sharesStone(stone.name, p.stone),
+            );
             return (
               <div key={stone.id} className="flex flex-col text-center">
                 <span className="relative mx-auto block aspect-square w-full max-w-[220px] overflow-hidden rounded-3xl border border-border bg-surface shadow-[0_18px_50px_-30px_rgba(144,86,141,0.5)]">
@@ -79,9 +104,26 @@ export default function StoneFinder() {
                 >
                   Buy now
                 </Link>
+                {pendant && (
+                  <Link
+                    href={productHref(pendant)}
+                    className="mt-3 text-sm font-medium text-primary-deep underline-offset-4 transition-colors hover:text-primary hover:underline"
+                  >
+                    Also as a pendant →
+                  </Link>
+                )}
               </div>
             );
           })}
+        </div>
+
+        {/* Pendants for this intention (empty until pendants launch). */}
+        <div className="mx-auto max-w-2xl">
+          <CompleteTheRitual
+            title="Wear it as a pendant"
+            items={intentionPendants}
+            copy={`Stones that invite ${chosen.invites}, on a simple black thread.`}
+          />
         </div>
 
         <ul className="mx-auto mt-12 flex max-w-2xl flex-col gap-3 text-sm leading-7 text-muted">
