@@ -50,6 +50,21 @@ function couponLines(coupon: Coupon | null | undefined, discount: number): strin
   return [`Coupon ${coupon.code} (${coupon.percent}% off) — you saved ${inr.format(discount)}`];
 }
 
+/** Gift wrap on an order: added once, with an optional message for the card. */
+export interface GiftWrapChoice {
+  price: number;
+  message?: string;
+}
+
+/** The "Gift wrap" (and "Gift message") order-summary lines, or nothing. */
+function giftLines(gift: GiftWrapChoice | null | undefined): string[] {
+  if (!gift) return [];
+  const lines = [`Gift wrap: ${gift.price > 0 ? inr.format(gift.price) : "FREE"}`];
+  const message = gift.message?.trim();
+  if (message) lines.push(`Gift message: "${message}"`);
+  return lines;
+}
+
 /**
  * The price part of an order row. With the coupon on it shows the reduced
  * price — what the shopper is actually paying — plus the code and the regular
@@ -184,6 +199,7 @@ export function buildProductOrderText(
   delivery: DeliverySettings,
   imageUrl?: string,
   coupon?: Coupon | null,
+  gift?: GiftWrapChoice | null,
 ): string {
   const discount = itemDiscount(coupon, product.price, isCouponEligible(product));
   const payable = product.price - discount;
@@ -195,8 +211,9 @@ export function buildProductOrderText(
     ...(imageUrl ? ["", `Photo: ${imageUrl}`] : []),
     "",
     ...couponLines(coupon, discount),
+    ...giftLines(gift),
     deliveryLine(fee),
-    `Total: ${inr.format(payable + fee)}`,
+    `Total: ${inr.format(payable + (gift?.price ?? 0) + fee)}`,
     "",
     "Could you help me complete the order?",
   ].join("\n");
@@ -209,20 +226,23 @@ export function buildProductOrderLink(
   delivery: DeliverySettings,
   imageUrl?: string,
   coupon?: Coupon | null,
+  gift?: GiftWrapChoice | null,
 ): string {
-  return waLink(buildProductOrderText(product, size, delivery, imageUrl, coupon));
+  return waLink(buildProductOrderText(product, size, delivery, imageUrl, coupon, gift));
 }
 
 /**
- * The pre-filled message body for ordering one Stone Décor object. Same shape as
- * a product order but sizeless (décor has no wrist size); the code and name
+ * The pre-filled message body for ordering one range product (any tab beyond
+ * Bracelets — décor, pendants, …). Same shape as
+ * a bracelet order but sizeless (no wrist size); the code and name
  * identify the item.
  */
-export function buildDecorOrderText(
+export function buildRangeOrderText(
   product: Product,
   delivery: DeliverySettings,
   imageUrl?: string,
   coupon?: Coupon | null,
+  gift?: GiftWrapChoice | null,
 ): string {
   const discount = itemDiscount(coupon, product.price, isCouponEligible(product));
   const payable = product.price - discount;
@@ -234,25 +254,27 @@ export function buildDecorOrderText(
     ...(imageUrl ? ["", `Photo: ${imageUrl}`] : []),
     "",
     ...couponLines(coupon, discount),
+    ...giftLines(gift),
     deliveryLine(fee),
-    `Total: ${inr.format(payable + fee)}`,
+    `Total: ${inr.format(payable + (gift?.price ?? 0) + fee)}`,
     "",
     "Could you help me complete the order?",
   ].join("\n");
 }
 
-/** Deep link that opens WhatsApp pre-filled to order one décor object. */
-export function buildDecorOrderLink(
+/** Deep link that opens WhatsApp pre-filled to order one range product. */
+export function buildRangeOrderLink(
   product: Product,
   delivery: DeliverySettings,
   imageUrl?: string,
   coupon?: Coupon | null,
+  gift?: GiftWrapChoice | null,
 ): string {
-  return waLink(buildDecorOrderText(product, delivery, imageUrl, coupon));
+  return waLink(buildRangeOrderText(product, delivery, imageUrl, coupon, gift));
 }
 
-/** Deep link to pre-order a sold-out décor object (intent-to-buy, no total). */
-export function buildDecorPreOrderLink(
+/** Deep link to pre-order a sold-out range product (intent-to-buy, no total). */
+export function buildRangePreOrderLink(
   product: Product,
   imageUrl?: string,
 ): string {
@@ -302,6 +324,7 @@ export function buildCustomOrderText(
   line: CustomOrderLine,
   delivery: DeliverySettings,
   coupon?: Coupon | null,
+  gift?: GiftWrapChoice | null,
 ): string {
   const subtotal = line.unitPrice * line.qty;
   // Custom bracelets are always coupon-eligible — there's no product to opt out.
@@ -314,8 +337,9 @@ export function buildCustomOrderText(
     `• ${customLineText({ ...line, couponApplied: discount > 0 }, coupon)}`,
     "",
     ...couponLines(coupon, discount),
+    ...giftLines(gift),
     deliveryLine(fee),
-    `Total: ${inr.format(payable + fee)}`,
+    `Total: ${inr.format(payable + (gift?.price ?? 0) + fee)}`,
     "",
     "Could you help me complete the order?",
   ].join("\n");
@@ -326,8 +350,9 @@ export function buildCustomOrderLink(
   line: CustomOrderLine,
   delivery: DeliverySettings,
   coupon?: Coupon | null,
+  gift?: GiftWrapChoice | null,
 ): string {
-  return waLink(buildCustomOrderText(line, delivery, coupon));
+  return waLink(buildCustomOrderText(line, delivery, coupon, gift));
 }
 
 /** Coupon discount on one bag line (0 without the coupon, or if the product is excluded). */
@@ -383,6 +408,8 @@ export function buildSelectionOrderLink(
   delivery: DeliverySettings,
   origin?: string,
   coupon?: Coupon | null,
+  /** Set when the shopper ticked gift wrap: its price is added once. */
+  giftWrap?: GiftWrapChoice | null,
 ): string {
   const { discount, payable } = selectionTotals(
     lines,
@@ -412,8 +439,9 @@ export function buildSelectionOrderLink(
     // Item prices above are already the coupon prices, so the subtotal is too.
     `Subtotal: ${inr.format(payable)}`,
     ...couponLines(coupon, discount),
+    ...giftLines(giftWrap),
     deliveryLine(fee),
-    `Total: ${inr.format(payable + fee)}`,
+    `Total: ${inr.format(payable + (giftWrap?.price ?? 0) + fee)}`,
     "Could you help me complete the order?",
   ].join("\n");
   return waLink(text);

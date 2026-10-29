@@ -6,13 +6,14 @@ import {
   type Product,
 } from "@/data/products";
 import {
-  buildDecorOrderLink,
-  buildDecorPreOrderLink,
+  buildRangeOrderLink,
+  buildRangePreOrderLink,
   toAbsoluteImageUrl,
 } from "@/lib/whatsapp";
 import { track } from "@/lib/analytics";
 import { useCatalog } from "@/components/catalog-provider";
 import CouponField, { useProductCoupon } from "@/components/coupon-field";
+import GiftWrapOption, { useGiftOption } from "@/components/gift-wrap-option";
 import { useSelection } from "@/components/selection-provider";
 import { useToast } from "@/components/toast-provider";
 
@@ -25,14 +26,15 @@ function WhatsAppIcon({ className }: { className?: string }) {
 }
 
 /**
- * Order panel for a sizeless piece — a Stone Décor object or a pendant. Like
+ * Order panel for a range product (any tab beyond Bracelets). Like
  * the bracelet panel but with no wrist size:
  * order one piece straight on WhatsApp, or add it to the shared bag (as a line
  * with no size) to order alongside bracelets. Sold out → pre-order only.
  */
-export default function DecorOrderPanel({ product }: { product: Product }) {
+export default function RangeOrderPanel({ product }: { product: Product }) {
   const { delivery } = useCatalog();
   const coupon = useProductCoupon(product);
+  const gift = useGiftOption();
   const { add, decrement, qtyOf } = useSelection();
   const { show } = useToast();
   // Décor lines in the bag carry no size.
@@ -41,7 +43,7 @@ export default function DecorOrderPanel({ product }: { product: Product }) {
   const handleAdd = () => {
     add(product.id, null);
     track("add_to_bag", {
-      type: product.kind ?? "decor",
+      type: product.range?.slug ?? "range",
       id: product.id,
       name: product.name,
       value: product.price,
@@ -62,26 +64,26 @@ export default function DecorOrderPanel({ product }: { product: Product }) {
     const imageUrl = toAbsoluteImageUrl(product.image, window.location.origin);
     if (soldOut) {
       track("whatsapp_preorder", {
-        type: product.kind ?? "decor",
+        type: product.range?.slug ?? "range",
         id: product.id,
         name: product.name,
         value: product.price,
       });
       window.open(
-        buildDecorPreOrderLink(product, imageUrl),
+        buildRangePreOrderLink(product, imageUrl),
         "_blank",
         "noopener,noreferrer",
       );
       return;
     }
     track("whatsapp_order", {
-      type: product.kind ?? "decor",
+      type: product.range?.slug ?? "range",
       id: product.id,
       name: product.name,
       value: product.price,
     });
     window.open(
-      buildDecorOrderLink(product, delivery, imageUrl, coupon),
+      buildRangeOrderLink(product, delivery, imageUrl, coupon, gift),
       "_blank",
       "noopener,noreferrer",
     );
@@ -99,6 +101,9 @@ export default function DecorOrderPanel({ product }: { product: Product }) {
           {stock}
         </p>
       ) : null}
+
+      {/* Gift wrap — not for pre-orders, which carry no price yet. */}
+      {!soldOut && <GiftWrapOption className="mb-3" />}
 
       <button
         type="button"

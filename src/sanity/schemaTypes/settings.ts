@@ -20,6 +20,13 @@ export const settingsType = defineType({
         "A code shoppers enter in their bag for an instant discount. Applies to all products by default; exclude individual products from their own page.",
       options: { collapsible: true, collapsed: false },
     },
+    {
+      name: "giftWrap",
+      title: "Gift wrap",
+      description:
+        "An optional gift-wrap checkbox in the bag. When ticked, the price below is added once to the order.",
+      options: { collapsible: true, collapsed: false },
+    },
   ],
   fields: [
     defineField({
@@ -93,6 +100,23 @@ export const settingsType = defineType({
       initialValue: 10,
       fieldset: "coupon",
       validation: (r) => r.min(1).max(90),
+    }),
+    defineField({
+      name: "giftWrapEnabled",
+      title: "Offer gift wrap",
+      type: "boolean",
+      description: "Show the \"Add gift wrap\" checkbox in the bag.",
+      initialValue: true,
+      fieldset: "giftWrap",
+    }),
+    defineField({
+      name: "giftWrapPrice",
+      title: "Gift wrap price (₹)",
+      type: "number",
+      description: "Added once per order when the shopper ticks gift wrap. 0 makes it free.",
+      initialValue: 15,
+      fieldset: "giftWrap",
+      validation: (r) => r.min(0),
     }),
   ],
   preview: {

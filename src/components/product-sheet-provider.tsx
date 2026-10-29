@@ -17,7 +17,7 @@ import {
   type Product,
 } from "@/data/products";
 import ProductOrderPanel from "@/components/product-order-panel";
-import DecorOrderPanel from "@/components/decor-order-panel";
+import RangeOrderPanel from "@/components/range-order-panel";
 import DetailPrice from "@/components/detail-price";
 
 interface ProductSheetContextValue {
@@ -145,10 +145,11 @@ function ProductSheet({
           <span aria-hidden>→</span>
         </Link>
 
-        {/* Shared selection controls — identical to the detail page. Décor and
-            pendants have no wrist size, so they get the sizeless panel. */}
+        {/* Shared selection controls — identical to the detail page. Range
+            products (every tab beyond Bracelets) have no wrist size, so they
+            get the sizeless panel. */}
         {sizeless ? (
-          <DecorOrderPanel key={product.id} product={product} />
+          <RangeOrderPanel key={product.id} product={product} />
         ) : (
           <ProductOrderPanel key={product.id} product={product} />
         )}

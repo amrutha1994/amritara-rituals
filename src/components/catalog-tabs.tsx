@@ -4,140 +4,66 @@ import { useEffect, useId, useMemo, useState } from "react";
 
 import type { Intention } from "@/data/intentions";
 import { isNewArrival, type Product } from "@/data/products";
+import type { Range, RangeIconName } from "@/data/ranges";
 import CollectionBrowser from "@/components/collection-browser";
-import DecorBrowser from "@/components/decor-browser";
+import RangeBrowser from "@/components/range-browser";
+import RangeIcon from "@/components/range-icon";
 
-type TabId = "bracelets" | "decor" | "pendants";
+/** Bracelets are the built-in first tab; every other tab is a Sanity range. */
+const BRACELETS = "bracelets";
 
-/** The URL hash that deep-links each tab: `/#bracelets`, `/#decor`, `/#pendants`. */
-function tabFromHash(hash: string): TabId | null {
-  const h = hash.replace(/^#/, "");
-  return h === "bracelets" || h === "decor" || h === "pendants" ? h : null;
+const BRACELET_SUBCOPY = "One crystal, one intention. Choose the energy you want to wear!";
+
+interface Tab {
+  /** Also the URL hash that deep-links the tab: `/#bracelets`, `/#decor`, … */
+  id: string;
+  label: string;
+  icon: RangeIconName;
+  subcopy: string;
+  /** NEW badge while any product in the tab is marked "New arrival". */
+  isNew: boolean;
 }
-
-/** Per-tab subcopy — the tab label acts as the title, so this is the only intro line. */
-const COPY: Record<TabId, { subcopy: string }> = {
-  bracelets: {
-    subcopy: "One crystal, one intention. Choose the energy you want to wear!",
-  },
-  decor: {
-    subcopy:
-      "Natural-stone objects to carry an intention into your home, car and sacred spaces.",
-  },
-  pendants: {
-    subcopy: "One stone, worn close to your heart — on a simple black thread.",
-  },
-};
-
-type IconProps = { className?: string };
-
-// A bracelet band with a charm bead — clean and non-spinner-like.
-function BraceletIcon({ className }: IconProps) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden
-    >
-      <circle cx="12" cy="13" r="7" />
-      <circle cx="12" cy="4" r="1.7" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
-
-// The same décor glyph used in the site header, for a consistent language.
-function DecorIcon({ className }: IconProps) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden
-    >
-      <path d="M6 9h12l-2.5 11h-7L6 9Z" />
-      <path d="m6 9 2-4h8l2 4" />
-      <path d="M9.5 9 12 5l2.5 4" />
-    </svg>
-  );
-}
-
-// A teardrop stone hanging from a cord — same line weight as the other glyphs.
-function PendantIcon({ className }: IconProps) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden
-    >
-      <path d="M4 3c1.5 5 4.5 8 8 8s6.5-3 8-8" />
-      <path d="M12 11c-2.4 2.6-3.5 4.6-3.5 6.2a3.5 3.5 0 0 0 7 0c0-1.6-1.1-3.6-3.5-6.2Z" />
-    </svg>
-  );
-}
-
-const TABS: { id: TabId; label: string; Icon: (p: IconProps) => React.ReactElement }[] = [
-  { id: "bracelets", label: "Bracelets", Icon: BraceletIcon },
-  { id: "decor", label: "For your space", Icon: DecorIcon },
-  { id: "pendants", label: "Pendants", Icon: PendantIcon },
-];
 
 /**
  * The Collections section as the ranges the shopper switches between —
- * Bracelets (default), Stone Décor and Pendants — each with its own filters
- * and grid.
- * A segmented, keyboard-navigable tablist styled like the header's pill nav.
+ * Bracelets (default) followed by every live Sanity range (Stone Décor,
+ * Pendants, …), each with its own filters and grid. A segmented,
+ * keyboard-navigable tablist styled like the header's pill nav.
  *
- * A tab only shows once its line has items (feature flag on and something
- * authored). With only bracelets, the tabs disappear entirely and it renders
- * exactly as the old bracelet-only section, so nothing shows before it's ready.
+ * Range tabs come entirely from the Studio: a range appears once it's switched
+ * on and has a visible product. With only bracelets, the tabs disappear and it
+ * renders exactly as the bracelet-only section.
  */
 export default function CatalogTabs({
   products,
-  decor,
-  pendants,
+  ranges,
   intentions,
 }: {
   products: Product[];
-  decor: Product[];
-  pendants: Product[];
+  ranges: Range[];
   intentions: Intention[];
 }) {
-  const [tab, setTab] = useState<TabId>("bracelets");
+  const [tab, setTab] = useState<string>(BRACELETS);
   const baseId = useId();
 
-  // A tab only appears once its line has items (and its feature flag is on —
-  // the server returns [] while it's off).
-  const hasDecor = decor.length > 0;
-  const hasPendants = pendants.length > 0;
-  const tabs = useMemo(
-    () =>
-      TABS.filter(
-        (t) =>
-          t.id === "bracelets" ||
-          (t.id === "decor" && hasDecor) ||
-          (t.id === "pendants" && hasPendants),
-      ),
-    [hasDecor, hasPendants],
+  const tabs = useMemo<Tab[]>(
+    () => [
+      { id: BRACELETS, label: "Bracelets", icon: "bracelet", subcopy: BRACELET_SUBCOPY, isNew: false },
+      ...ranges
+        // A range can't take the bracelets tab's id.
+        .filter((r) => r.slug !== BRACELETS)
+        .map((r) => ({
+          id: r.slug,
+          label: r.title,
+          icon: r.icon,
+          subcopy: r.subcopy,
+          isNew: r.products.some((p) => p.show && isNewArrival(p)),
+        })),
+    ],
+    [ranges],
   );
   const showTabs = tabs.length > 1;
-  const active: TabId = tabs.some((t) => t.id === tab) ? tab : "bracelets";
-  // Launch signal: the Pendants tab wears a NEW badge while any pendant is
-  // marked "New arrival" in Sanity, and drops it once none are.
-  const pendantsNew = pendants.some(isNewArrival);
+  const active = tabs.find((t) => t.id === tab) ?? tabs[0];
 
   // Deep links: `/#decor` opens the décor tab and scrolls the collection into
   // view. Read on mount (shared links, cross-page navigation) and on
@@ -146,9 +72,8 @@ export default function CatalogTabs({
   useEffect(() => {
     if (!showTabs) return;
     function sync() {
-      const fromHash = tabFromHash(window.location.hash);
-      if (!fromHash) return;
-      // Ignore a hash for a line that isn't live (e.g. an old `/#pendants` link).
+      const fromHash = window.location.hash.replace(/^#/, "");
+      // Ignore hashes that aren't a live tab (other anchors, retired tabs).
       if (!tabs.some((t) => t.id === fromHash)) return;
       setTab(fromHash);
       document.getElementById("collections")?.scrollIntoView();
@@ -161,20 +86,20 @@ export default function CatalogTabs({
   // Switching tabs mirrors the choice into the URL so the address bar is always
   // a shareable link to what's on screen. `replaceState` keeps the page where it
   // is (no jump, no extra history entries) and fires no `hashchange`.
-  function selectTab(id: TabId) {
+  function selectTab(id: string) {
     setTab(id);
     window.history.replaceState(null, "", `#${id}`);
   }
 
-  const tabId = (id: TabId) => `${baseId}-tab-${id}`;
-  const panelId = (id: TabId) => `${baseId}-panel-${id}`;
+  const tabId = (id: string) => `${baseId}-tab-${id}`;
+  const panelId = (id: string) => `${baseId}-panel-${id}`;
 
   // Left/Right arrows move between tabs and carry focus with the selection,
   // matching native tablist behaviour.
   function onKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
     if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
     e.preventDefault();
-    const i = tabs.findIndex((t) => t.id === active);
+    const i = tabs.findIndex((t) => t.id === active.id);
     const next = tabs[(i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
     selectTab(next.id);
     document.getElementById(tabId(next.id))?.focus();
@@ -187,14 +112,16 @@ export default function CatalogTabs({
       </p>
 
       {showTabs && (
+        // Scrolls sideways when there are more tabs than fit (e.g. a phone with
+        // four or more ranges) instead of squashing the labels.
         <div
           role="tablist"
           aria-label="Product ranges"
           onKeyDown={onKeyDown}
-          className="mt-6 flex w-full border-b border-border"
+          className="mt-6 flex w-full overflow-x-auto border-b border-border [scrollbar-width:none]"
         >
-          {tabs.map(({ id, label, Icon }) => {
-            const selected = active === id;
+          {tabs.map(({ id, label, icon, isNew }) => {
+            const selected = active.id === id;
             return (
               <button
                 key={id}
@@ -206,15 +133,15 @@ export default function CatalogTabs({
                 tabIndex={selected ? 0 : -1}
                 onClick={() => selectTab(id)}
                 className={
-                  "-mb-px flex flex-1 items-center justify-center gap-2 whitespace-nowrap border-b-2 px-4 py-3 text-sm font-medium transition-colors sm:text-base " +
+                  "-mb-px flex flex-1 shrink-0 items-center justify-center gap-2 whitespace-nowrap border-b-2 px-4 py-3 text-sm font-medium transition-colors sm:text-base " +
                   (selected
                     ? "border-primary text-primary"
                     : "border-transparent text-foreground/55 hover:text-foreground")
                 }
               >
-                <Icon className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
+                <RangeIcon name={icon} className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
                 {label}
-                {id === "pendants" && pendantsNew && (
+                {isNew && (
                   <span className="rounded-full bg-crimson-deep px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-white">
                     New
                   </span>
@@ -225,44 +152,39 @@ export default function CatalogTabs({
         </div>
       )}
 
-      <div className="mx-auto mt-4 max-w-2xl text-center">
-        <p className="mx-auto max-w-xl text-sm leading-7 text-muted sm:text-base">
-          {COPY[active].subcopy}
-        </p>
-      </div>
+      {active.subcopy && (
+        <div className="mx-auto mt-4 max-w-2xl text-center">
+          <p className="mx-auto max-w-xl text-sm leading-7 text-muted sm:text-base">
+            {active.subcopy}
+          </p>
+        </div>
+      )}
 
-      {/* Both panels stay mounted so a shopper's filters survive tab switches;
+      {/* Every panel stays mounted so a shopper's filters survive tab switches;
           `hidden` shows only the active one. */}
       {showTabs ? (
         <>
           <div
             role="tabpanel"
-            id={panelId("bracelets")}
-            aria-labelledby={tabId("bracelets")}
-            hidden={active !== "bracelets"}
+            id={panelId(BRACELETS)}
+            aria-labelledby={tabId(BRACELETS)}
+            hidden={active.id !== BRACELETS}
           >
             <CollectionBrowser products={products} intentions={intentions} />
           </div>
-          <div
-            role="tabpanel"
-            id={panelId("decor")}
-            aria-labelledby={tabId("decor")}
-            hidden={active !== "decor"}
-          >
-            <DecorBrowser products={decor} intentions={intentions} />
-          </div>
-          <div
-            role="tabpanel"
-            id={panelId("pendants")}
-            aria-labelledby={tabId("pendants")}
-            hidden={active !== "pendants"}
-          >
-            <DecorBrowser
-              products={pendants}
-              intentions={intentions}
-              emptyCopy="Our pendants are being strung — check back shortly."
-            />
-          </div>
+          {ranges
+            .filter((r) => r.slug !== BRACELETS)
+            .map((r) => (
+              <div
+                key={r.slug}
+                role="tabpanel"
+                id={panelId(r.slug)}
+                aria-labelledby={tabId(r.slug)}
+                hidden={active.id !== r.slug}
+              >
+                <RangeBrowser products={r.products} intentions={intentions} />
+              </div>
+            ))}
         </>
       ) : (
         <CollectionBrowser products={products} intentions={intentions} />

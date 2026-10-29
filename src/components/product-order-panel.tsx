@@ -20,6 +20,7 @@ import { useSelection } from "@/components/selection-provider";
 import { useToast } from "@/components/toast-provider";
 import SizeChart from "@/components/size-chart";
 import CouponField, { useProductCoupon } from "@/components/coupon-field";
+import GiftWrapOption, { useGiftOption } from "@/components/gift-wrap-option";
 
 function WhatsAppIcon({ className }: { className?: string }) {
   return (
@@ -36,6 +37,7 @@ export default function ProductOrderPanel({ product }: { product: Product }) {
   const { delivery } = useCatalog();
   const { show } = useToast();
   const coupon = useProductCoupon(product);
+  const gift = useGiftOption();
 
   const qty = size ? qtyOf(product.id, size) : 0;
 
@@ -58,7 +60,7 @@ export default function ProductOrderPanel({ product }: { product: Product }) {
     });
     const imageUrl = toAbsoluteImageUrl(product.image, window.location.origin);
     window.open(
-      buildProductOrderLink(product, size, delivery, imageUrl, coupon),
+      buildProductOrderLink(product, size, delivery, imageUrl, coupon, gift),
       "_blank",
       "noopener,noreferrer",
     );
@@ -195,6 +197,8 @@ export default function ProductOrderPanel({ product }: { product: Product }) {
         </div>
       ) : (
         <div className="mt-6 flex flex-col gap-3">
+          {/* One choice per visit — also ticked in the bag. */}
+          <GiftWrapOption />
           <button
             type="button"
             onClick={handleOrder}

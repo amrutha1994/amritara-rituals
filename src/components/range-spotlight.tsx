@@ -1,23 +1,35 @@
 import Link from "next/link";
 
 import { isNewArrival } from "@/data/products";
+import type { Range } from "@/data/ranges";
 import ProductImage from "@/components/product-image";
-import { getPendants } from "@/sanity/queries";
+import { getRanges } from "@/sanity/queries";
 
 /**
- * Homepage launch strip for the Pendants line, just above the collection. Shows
- * only while at least one pendant is marked "New arrival" in Sanity, so it
- * appears on launch and retires itself once the "New" flags are switched off —
- * no deploy needed either way. Renders nothing while the feature flag is off
- * (`getPendants` returns []).
+ * Homepage spotlight strips, just above the collection — one per live range
+ * with "Show homepage spotlight" switched on in the Studio (e.g. a launch).
+ * The heading and text come from the range; the photos are its newest pieces.
+ * Turning the switch off removes it, no deploy needed.
  */
-export default async function PendantsLaunchStrip() {
-  const pendants = (await getPendants()).filter((p) => p.show);
-  const fresh = pendants.filter(isNewArrival);
-  if (fresh.length === 0) return null;
+export default async function RangeSpotlights() {
+  const ranges = (await getRanges()).filter((r) => r.spotlight.enabled);
+  if (ranges.length === 0) return null;
+  return (
+    <>
+      {ranges.map((r) => (
+        <Spotlight key={r.slug} range={r} />
+      ))}
+    </>
+  );
+}
 
-  // Up to three new pendants as a small fan of photos.
-  const featured = fresh.slice(0, 3);
+function Spotlight({ range }: { range: Range }) {
+  const visible = range.products.filter((p) => p.show);
+  // New arrivals first, so a launch shows off what's new.
+  const featured = [
+    ...visible.filter(isNewArrival),
+    ...visible.filter((p) => !isNewArrival(p)),
+  ].slice(0, 3);
 
   return (
     <section className="bg-background px-6 pt-14">
@@ -25,20 +37,21 @@ export default async function PendantsLaunchStrip() {
         <div className="flex-1">
           <span className="inline-flex items-center gap-2 rounded-full border border-gold-light/50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-gold-light">
             <span className="h-1.5 w-1.5 rounded-full bg-gold-light" />
-            New · Pendants
+            New · {range.title}
           </span>
           <h2 className="mt-4 font-display text-3xl font-medium sm:text-4xl">
-            Worn close to your heart
+            {range.spotlight.heading || range.title}
           </h2>
-          <p className="mt-3 max-w-md text-base leading-7 text-white/85">
-            {pendants.length} natural stones, each on a simple black thread.
-            Choose the energy you want to carry with you.
-          </p>
+          {range.spotlight.text && (
+            <p className="mt-3 max-w-md whitespace-pre-line text-base leading-7 text-white/85">
+              {range.spotlight.text}
+            </p>
+          )}
           <Link
-            href="#pendants"
+            href={`#${range.slug}`}
             className="mt-6 inline-flex rounded-full bg-gold-light px-7 py-3 text-sm font-semibold tracking-wide text-clay-deep transition-colors hover:bg-gold"
           >
-            Explore pendants
+            Explore {range.title.toLowerCase()}
           </Link>
         </div>
 
@@ -50,13 +63,7 @@ export default async function PendantsLaunchStrip() {
                 i === 1 ? "z-10 -mx-4 -translate-y-3" : ""
               } ${i === 0 ? "-rotate-6" : i === 2 ? "rotate-6" : ""}`}
             >
-              <ProductImage
-                src={p.image}
-                alt={p.name}
-                fill
-                sizes="144px"
-                className="object-cover"
-              />
+              <ProductImage src={p.image} alt={p.name} fill sizes="144px" className="object-cover" />
             </span>
           ))}
         </div>

@@ -6,6 +6,7 @@ import { track } from "@/lib/analytics";
 import { useCatalog } from "@/components/catalog-provider";
 import { useSelection } from "@/components/selection-provider";
 import CouponField, { useAppliedCoupon } from "@/components/coupon-field";
+import GiftWrapOption, { useGiftOption } from "@/components/gift-wrap-option";
 import {
   buildSelectionOrderLink,
   customLineDiscount,
@@ -62,6 +63,7 @@ export default function SelectionBar() {
     count,
   } = useSelection();
   const { getProduct, getStone, delivery } = useCatalog();
+  const giftWrap = useGiftOption();
   const [open, setOpen] = useState(false);
   // One code for the whole order: once applied anywhere, every eligible line
   // (all but products excluded in Sanity) is discounted.
@@ -106,6 +108,10 @@ export default function SelectionBar() {
   );
   // Free delivery is judged on what the shopper actually pays, after the coupon.
   const deliveryFee = deliveryFeeFor(payable, delivery);
+  // Gift wrap is one charge per order, added after the free-delivery check —
+  // the threshold is about the pieces, not the wrapping.
+  const giftWrapFee = giftWrap?.price ?? 0;
+  const grandTotal = payable + giftWrapFee + deliveryFee;
   const noun = count === 1 ? "ritual" : "rituals";
 
   // Build the order link on click so we can use the live origin for the photo
@@ -121,13 +127,19 @@ export default function SelectionBar() {
       couponApplied: c.couponApplied,
       imageUrls: c.stones.map((s) => toAbsoluteImageUrl(s.image, origin)),
     }));
-    track("whatsapp_order", { type: "bag", items: count, value: payable });
+    track("whatsapp_order", {
+      type: "bag",
+      items: count,
+      value: payable + giftWrapFee,
+      gift_wrap: giftWrap !== null,
+    });
     const link = buildSelectionOrderLink(
       lines,
       customOrderLines,
       delivery,
       origin,
       coupon,
+      giftWrap,
     );
     window.open(link, "_blank", "noopener,noreferrer");
   };
@@ -295,6 +307,9 @@ export default function SelectionBar() {
           {/* Shows "applied" if the code was already entered on a product page. */}
           <CouponField className="mt-3 border-t border-border pt-3" />
 
+          {/* Optional gift wrap + card message — offered and priced in Sanity Settings. */}
+          <GiftWrapOption className="mt-3 border-t border-border pt-3" />
+
           {/* Price breakdown — delivery is shown separately from the items. */}
           <div className="mt-3 flex flex-col gap-1 border-t border-border pt-3 text-sm">
             <div className="flex items-center justify-between text-muted">
@@ -309,13 +324,19 @@ export default function SelectionBar() {
                 <span>− {inr.format(discount)}</span>
               </div>
             )}
+            {giftWrap && (
+              <div className="flex items-center justify-between text-muted">
+                <span>Gift wrap</span>
+                <span>{giftWrapFee > 0 ? inr.format(giftWrapFee) : "FREE"}</span>
+              </div>
+            )}
             <div className="flex items-center justify-between text-muted">
               <span>Delivery</span>
               <span>{deliveryFee > 0 ? inr.format(deliveryFee) : "FREE"}</span>
             </div>
             <div className="flex items-center justify-between font-semibold text-foreground">
               <span>Total</span>
-              <span>{inr.format(payable + deliveryFee)}</span>
+              <span>{inr.format(grandTotal)}</span>
             </div>
           </div>
 
@@ -331,7 +352,7 @@ export default function SelectionBar() {
           className="flex flex-1 items-center gap-2 text-left text-sm font-medium"
         >
           <span>
-            {count} {noun} · {inr.format(payable)}
+            {count} {noun} · {inr.format(payable + giftWrapFee)}
           </span>
           <svg
             width="16"

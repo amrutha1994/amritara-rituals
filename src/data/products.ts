@@ -1,4 +1,5 @@
 import type { IntentionId } from "@/data/intentions";
+import type { RangeRef } from "@/data/ranges";
 
 /** Bracelet size identifiers (wrist-circumference based). */
 export type BraceletSizeId = "S" | "M" | "L";
@@ -111,35 +112,25 @@ export interface Product {
    */
   intentions: IntentionId[];
   /**
-   * What kind of product this is. `undefined`/"bracelet" is the wearable
-   * bracelet (the default). "decor" is a Stone Décor object and "pendant" a
-   * stone pendant on a black thread — both have no wrist size and link under
-   * their own routes (see `productHref`). Drives the few type-aware bits in
-   * shared components (card link, order flow).
+   * The Sanity-managed range (Collections tab) this piece belongs to — Stone
+   * Décor, Pendants, or any range added later. `undefined` for bracelets, the
+   * built-in range. A range product has no wrist size and lives under
+   * /shop/<range>/<slug> (see `productHref`).
    */
-  kind?: "bracelet" | "decor" | "pendant";
-  /** Décor / pendant — physical size text, e.g. "Height 7 cm" or "Pendant 3 cm". */
+  range?: RangeRef;
+  /** Range products — physical size text, e.g. "Height 7 cm" or "Pendant 3 cm". */
   dimensions?: string;
-  /** Décor only — placement ids where the object is meant to live (car/wall/…). */
-  placement?: string[];
 }
-
-/**
- * Every pendant comes on the same black thread at one fixed length, so this is
- * stated once here rather than authored on each product.
- */
-export const PENDANT_THREAD_NOTE = "On a black thread · one fixed length, ready to wear";
 
 /** The product page URL for any kind of product. */
 export function productHref(product: Product): string {
-  if (product.kind === "decor") return `/decor/${product.slug}`;
-  if (product.kind === "pendant") return `/pendants/${product.slug}`;
+  if (product.range) return `/shop/${product.range.slug}/${product.slug}`;
   return `/collections/${product.slug}`;
 }
 
-/** Whether a product is ordered without a wrist size (décor and pendants). */
+/** Whether a product is ordered without a wrist size (every range but bracelets). */
 export function isSizeless(product: Product): boolean {
-  return product.kind === "decor" || product.kind === "pendant";
+  return product.range !== undefined;
 }
 
 /**
@@ -365,6 +356,18 @@ export interface Coupon {
   code: string;
   percent: number;
 }
+
+/**
+ * Optional gift wrap, ticked in the bag: `price` is added once per order. Set in
+ * the Sanity `settings` singleton.
+ */
+export interface GiftWrap {
+  enabled: boolean;
+  price: number;
+}
+
+/** Fallback until the `settings` document has gift-wrap values: offered at ₹15. */
+export const DEFAULT_GIFT_WRAP: GiftWrap = { enabled: true, price: 15 };
 
 /** Fallback until the `settings` document has a coupon: no coupon. */
 export const DEFAULT_COUPON: Coupon = { enabled: false, code: "", percent: 10 };

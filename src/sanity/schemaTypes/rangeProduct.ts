@@ -5,29 +5,31 @@ import {
 import { defineField, defineType } from "sanity";
 
 /**
- * A natural-stone décor object — the "Stone Décor" line (car/wall hangings and
- * figurines like owls, turtles and elephants, all shown together in one flat
- * section — no sub-categories). Kept as its own document type, separate from
- * bracelets, because it shops differently: no wrist size, but it does have
- * physical dimensions and a placement. It reuses the same commerce fields as a
- * bracelet (price, offer, stock, images, intentions) so it slots into the
- * existing cards and order flow.
- *
- * This whole line is hidden on the storefront until the `NEXT_PUBLIC_DECOR_ENABLED`
- * flag is turned on — but authors can add and prepare products here at any time.
+ * A product in a Sanity-managed Collections tab (see `productRange`) — Stone
+ * Décor, Pendants, or any range added later. Shares the bracelet commerce
+ * fields (price, offer, coupon, stock, images, intentions) so it slots into the
+ * existing cards, bag and order flow, but has no wrist size.
  */
-export const decorProductType = defineType({
-  name: "decorProduct",
-  title: "Stone Décor Product",
+export const rangeProductType = defineType({
+  name: "rangeProduct",
+  title: "Shop product",
   type: "document",
   orderings: [orderRankOrdering],
   fields: [
-    orderRankField({ type: "decorProduct" }),
+    orderRankField({ type: "rangeProduct" }),
+    defineField({
+      name: "range",
+      title: "Tab",
+      type: "reference",
+      to: [{ type: "productRange" }],
+      description: "Which Collections tab this product appears under.",
+      validation: (r) => r.required(),
+    }),
     defineField({
       name: "name",
       title: "Name",
       type: "string",
-      description: 'e.g. "Seven Chakra Car Hanging" or "Amethyst Owl".',
+      description: 'e.g. "Amethyst Thread Pendant" or "Pyrite Owl".',
       validation: (r) => r.required(),
     }),
     defineField({
@@ -35,14 +37,14 @@ export const decorProductType = defineType({
       title: "SKU / tracking code",
       type: "string",
       description:
-        'Stable code shown in WhatsApp orders, e.g. "AMD01". Never reuse a retired code.',
+        'Stable code shown in WhatsApp orders, e.g. "AMTP01". Unique across the whole shop — never reuse a retired code.',
       validation: (r) => r.required(),
     }),
     defineField({
       name: "slug",
       title: "Slug (URL)",
       type: "slug",
-      description: "Drives the product page URL (/decor/…). Do not change once shared.",
+      description: "Drives the product page URL (/shop/<tab>/…). Do not change once shared.",
       options: { source: "name", maxLength: 96 },
       validation: (r) => r.required(),
     }),
@@ -50,7 +52,8 @@ export const decorProductType = defineType({
       name: "stone",
       title: "Stone / material",
       type: "string",
-      description: 'The stone(s) it\'s made of, e.g. "Amethyst" or "Seven Chakra".',
+      description:
+        'e.g. "Green Aventurine" or "Seven Chakra". If the tab pairs with bracelets, spell it the way the matching bracelet and Stone Finder stone are named, so they link up.',
     }),
     defineField({
       name: "suggestedPrice",
@@ -98,30 +101,15 @@ export const decorProductType = defineType({
       title: "New arrival",
       type: "boolean",
       description:
-        'Marks this piece as a recent addition — shows a "New" badge on its card and product page. Turn it off once it\'s no longer one of the latest.',
+        'Marks this as a recent addition — shows a "New" badge on its card and product page, and a NEW badge on its tab while any product in the tab is new.',
       initialValue: false,
     }),
     defineField({
       name: "dimensions",
-      title: "Dimensions / size",
+      title: "Size",
       type: "string",
       description:
-        'Physical size shoppers want to know, e.g. "Height 7 cm" or "Hanging length 30 cm".',
-    }),
-    defineField({
-      name: "placement",
-      title: "Placement",
-      type: "array",
-      of: [{ type: "string" }],
-      options: {
-        list: [
-          { title: "Car", value: "car" },
-          { title: "Wall", value: "wall" },
-          { title: "Desk / shelf", value: "desk" },
-          { title: "Altar / sacred space", value: "altar" },
-        ],
-      },
-      description: "Where this object is meant to live. Optional.",
+        'Optional physical size, e.g. "Height 7 cm" or "Pendant approx. 3 cm".',
     }),
     defineField({
       name: "shortIntention",
@@ -150,7 +138,7 @@ export const decorProductType = defineType({
       type: "array",
       of: [{ type: "reference", to: [{ type: "intention" }] }],
       description:
-        "The intentions this object serves — powers the Stone Décor filter and ties it to the same 'shop by intention' language as bracelets.",
+        "The intentions this product serves — powers the tab's filter, using the same 'shop by intention' language as bracelets.",
     }),
     defineField({
       name: "images",
@@ -162,6 +150,6 @@ export const decorProductType = defineType({
     }),
   ],
   preview: {
-    select: { title: "name", subtitle: "stone", media: "images.0" },
+    select: { title: "name", subtitle: "range.title", media: "images.0" },
   },
 });

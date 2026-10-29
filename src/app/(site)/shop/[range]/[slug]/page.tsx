@@ -2,37 +2,47 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
-import { getAllProducts, getPendantBySlug, getPendants } from "@/sanity/queries";
+import { getAllProducts, getRange, getRanges } from "@/sanity/queries";
 import CompleteTheRitual from "@/components/complete-the-ritual";
-import DecorOrderPanel from "@/components/decor-order-panel";
+import RangeOrderPanel from "@/components/range-order-panel";
 import DetailPrice from "@/components/detail-price";
 import ProductGallery from "@/components/product-gallery";
 import {
-  PENDANT_THREAD_NOTE,
   isNewArrival,
   pairedPieces,
+  productHref,
   stockStatus,
   type Product,
 } from "@/data/products";
-import { PENDANTS_ENABLED } from "@/lib/features";
 import { SITE_NAME, absoluteUrl } from "@/lib/site";
 
-// Pre-render a page per pendant — but only when the feature is on, so no
-// hidden URLs are generated while it's off.
+/**
+ * Product page for any Sanity-managed range (Stone Décor, Pendants, …):
+ * /shop/<range>/<product>. A range that isn't switched on 404s.
+ */
+async function load(rangeSlug: string, slug: string) {
+  const range = await getRange(rangeSlug);
+  const product = range?.products.find((p) => p.slug === slug);
+  return range && product ? { range, product } : undefined;
+}
+
+// Pre-render a page per product in every live range.
 export async function generateStaticParams() {
-  if (!PENDANTS_ENABLED) return [];
-  const products = await getPendants();
-  return products.map((product) => ({ slug: product.slug }));
+  const ranges = await getRanges();
+  return ranges.flatMap((r) =>
+    r.products.map((p) => ({ range: r.slug, slug: p.slug })),
+  );
 }
 
 export async function generateMetadata({
   params,
-}: PageProps<"/pendants/[slug]">): Promise<Metadata> {
-  const { slug } = await params;
-  const product = PENDANTS_ENABLED ? await getPendantBySlug(slug) : undefined;
-  if (!product) return { title: "Not found" };
+}: PageProps<"/shop/[range]/[slug]">): Promise<Metadata> {
+  const { range: rangeSlug, slug } = await params;
+  const found = await load(rangeSlug, slug);
+  if (!found) return { title: "Not found" };
+  const { product } = found;
   const description = product.description || product.shortIntention;
-  const url = `/pendants/${slug}`;
+  const url = productHref(product);
   return {
     title: product.name,
     description,
@@ -48,8 +58,8 @@ export async function generateMetadata({
   };
 }
 
-/** Schema.org Product structured data (price + availability) for a pendant. */
-function pendantJsonLd(product: Product, slug: string) {
+/** Schema.org Product structured data (price + availability) for a range product. */
+function productJsonLd(product: Product, category: string) {
   const availability =
     stockStatus(product) === "sold_out"
       ? "https://schema.org/OutOfStock"
@@ -60,7 +70,7 @@ function pendantJsonLd(product: Product, slug: string) {
     name: product.name,
     description: product.description || product.shortIntention,
     sku: product.id,
-    category: "Pendants",
+    category,
     image: product.images.map((u) => (u.startsWith("http") ? u : absoluteUrl(u))),
     brand: { "@type": "Brand", name: SITE_NAME },
     offers: {
@@ -68,37 +78,37 @@ function pendantJsonLd(product: Product, slug: string) {
       price: product.price,
       priceCurrency: "INR",
       availability,
-      url: absoluteUrl(`/pendants/${slug}`),
+      url: absoluteUrl(productHref(product)),
     },
   };
 }
 
-export default async function PendantDetailPage({
+export default async function RangeProductPage({
   params,
-}: PageProps<"/pendants/[slug]">) {
-  if (!PENDANTS_ENABLED) notFound();
-  const { slug } = await params;
-  const [product, bracelets] = await Promise.all([
-    getPendantBySlug(slug),
+}: PageProps<"/shop/[range]/[slug]">) {
+  const { range: rangeSlug, slug } = await params;
+  const [found, bracelets] = await Promise.all([
+    load(rangeSlug, slug),
     getAllProducts(),
   ]);
-  if (!product) notFound();
+  if (!found) notFound();
+  const { range, product } = found;
 
   return (
     <main className="flex flex-1 flex-col">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(pendantJsonLd(product, slug)),
+          __html: JSON.stringify(productJsonLd(product, range.title)),
         }}
       />
       <section className="px-6 py-10 sm:py-14">
         <div className="mx-auto max-w-6xl">
           <Link
-            href="/#pendants"
+            href={`/#${range.slug}`}
             className="inline-flex items-center gap-1.5 text-sm font-medium text-muted transition-colors hover:text-primary"
           >
-            <span aria-hidden>←</span> Back to Pendants
+            <span aria-hidden>←</span> Back to {range.title}
           </Link>
 
           <div className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-2 lg:gap-16">
@@ -107,7 +117,7 @@ export default async function PendantDetailPage({
             <div className="flex flex-col">
               <div className="flex flex-wrap items-center gap-3">
                 <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gold-antique">
-                  Pendant
+                  {range.title}
                   {product.stone ? ` · ${product.stone}` : ""}
                 </p>
                 {isNewArrival(product) && (
@@ -127,10 +137,14 @@ export default async function PendantDetailPage({
 
               <DetailPrice product={product} />
 
-              <p className="mt-2 text-sm text-muted">
-                {PENDANT_THREAD_NOTE}
-                {product.dimensions ? ` · ${product.dimensions}` : ""}
-              </p>
+              {/* The tab's shared note (e.g. thread details) and this piece's size. */}
+              {(range.productNote || product.dimensions) && (
+                <p className="mt-2 text-sm text-muted">
+                  {[range.productNote, product.dimensions && `Size: ${product.dimensions}`]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </p>
+              )}
 
               {product.description && (
                 <p className="mt-6 text-base leading-8 text-muted whitespace-pre-line">
@@ -159,13 +173,15 @@ export default async function PendantDetailPage({
                 </div>
               )}
 
-              <DecorOrderPanel product={product} />
+              <RangeOrderPanel product={product} />
 
-              {/* Bracelets in the same stone, to wear as a set. */}
-              <CompleteTheRitual
-                items={pairedPieces(product, bracelets)}
-                copy="Pair it with a bracelet in the same stone."
-              />
+              {/* Bracelets in the same stone, when this tab pairs with them. */}
+              {range.pairWithBracelets && (
+                <CompleteTheRitual
+                  items={pairedPieces(product, bracelets)}
+                  copy="Pair it with a bracelet in the same stone."
+                />
+              )}
             </div>
           </div>
         </div>

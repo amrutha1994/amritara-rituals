@@ -11,12 +11,17 @@ import ProductImage from "@/components/product-image";
 /** How many stones the finder reveals for the chosen intention. */
 const BLEND_SIZE = 3;
 
+/** "a pendant", "an amulet" — for "Also as a …" / "Wear it as a …". */
+function withArticle(noun: string): string {
+  return `${/^[aeiou]/i.test(noun) ? "an" : "a"} ${noun}`;
+}
+
 export default function StoneFinder() {
   const {
     intentions: INTENTIONS,
     stones: allStones,
     products,
-    pendants,
+    ranges,
     getIntention,
   } = useCatalog();
   const [intention, setIntention] = useState<string | null>(null);
@@ -32,22 +37,35 @@ export default function StoneFinder() {
     [allStones, intention],
   );
 
-  // Pendants carrying this intention, for a "wear it as a pendant" row. Those
-  // already linked from a stone card above aren't repeated.
-  const linkedPendants = new Set(
-    stones.flatMap((stone) =>
-      pendants
-        .filter((p) => p.show && sharesStone(stone.name, p.stone))
-        .slice(0, 1)
-        .map((p) => p.id),
-    ),
+  // Tabs set to pair with bracelets in the Studio (e.g. Pendants) also show up
+  // here: an "Also as a pendant" link on each stone, and a row of pieces for the
+  // chosen intention.
+  const pairingRanges = ranges.filter((r) => r.pairWithBracelets);
+
+  /** The same stone as a piece from a pairing tab, if there is one. */
+  const pairedFor = (stoneName: string) => {
+    for (const range of pairingRanges) {
+      const item = range.products.find(
+        (p) => p.show && sharesStone(stoneName, p.stone),
+      );
+      if (item) return { range, item };
+    }
+    return undefined;
+  };
+
+  // Pieces linked from a stone card aren't repeated in the intention rows.
+  const linked = new Set(
+    stones.map((s) => pairedFor(s.name)?.item.id).filter(Boolean),
   );
-  const intentionPendants = intention
-    ? piecesForIntention(
-        intention,
-        pendants.filter((p) => !linkedPendants.has(p.id)),
-        4,
-      )
+  const intentionRows = intention
+    ? pairingRanges.map((range) => ({
+        range,
+        items: piecesForIntention(
+          intention,
+          range.products.filter((p) => !linked.has(p.id)),
+          4,
+        ),
+      }))
     : [];
 
   const reset = () => {
@@ -79,10 +97,8 @@ export default function StoneFinder() {
             const href = product
               ? `/collections/${product.slug}`
               : `/customise?size=${stone.beadSize}&stones=${stone.id}`;
-            // The same stone as a pendant, when one's live (empty before launch).
-            const pendant = pendants.find(
-              (p) => p.show && sharesStone(stone.name, p.stone),
-            );
+            // The same stone from a pairing tab, e.g. as a pendant.
+            const paired = pairedFor(stone.name);
             return (
               <div key={stone.id} className="flex flex-col text-center">
                 <span className="relative mx-auto block aspect-square w-full max-w-[220px] overflow-hidden rounded-3xl border border-border bg-surface shadow-[0_18px_50px_-30px_rgba(144,86,141,0.5)]">
@@ -104,12 +120,12 @@ export default function StoneFinder() {
                 >
                   Buy now
                 </Link>
-                {pendant && (
+                {paired && (
                   <Link
-                    href={productHref(pendant)}
+                    href={productHref(paired.item)}
                     className="mt-3 text-sm font-medium text-primary-deep underline-offset-4 transition-colors hover:text-primary hover:underline"
                   >
-                    Also as a pendant →
+                    Also as {withArticle(paired.range.itemName)} →
                   </Link>
                 )}
               </div>
@@ -117,14 +133,16 @@ export default function StoneFinder() {
           })}
         </div>
 
-        {/* Pendants for this intention (empty until pendants launch). */}
-        <div className="mx-auto max-w-2xl">
-          <CompleteTheRitual
-            title="Wear it as a pendant"
-            items={intentionPendants}
-            copy={`Stones that invite ${chosen.invites}, on a simple black thread.`}
-          />
-        </div>
+        {/* Pieces for this intention from each pairing tab (e.g. pendants). */}
+        {intentionRows.map(({ range, items }) => (
+          <div key={range.slug} className="mx-auto max-w-2xl">
+            <CompleteTheRitual
+              title={`Wear it as ${withArticle(range.itemName)}`}
+              items={items}
+              copy={`Stones that invite ${chosen.invites}.`}
+            />
+          </div>
+        ))}
 
         <ul className="mx-auto mt-12 flex max-w-2xl flex-col gap-3 text-sm leading-7 text-muted">
           <li className="flex gap-3">

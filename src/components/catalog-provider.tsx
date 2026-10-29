@@ -29,9 +29,12 @@ export function CatalogProvider({
   children: ReactNode;
 }) {
   const ctx = useMemo<CatalogValue>(() => {
-    // Décor and pendants share the bag with bracelets, so look-ups cover every line.
+    // Every range shares the bag with bracelets, so look-ups cover them all.
     const productMap = new Map(
-      [...value.products, ...value.decor, ...value.pendants].map((p) => [p.id, p]),
+      [...value.products, ...value.ranges.flatMap((r) => r.products)].map((p) => [
+        p.id,
+        p,
+      ]),
     );
     const stoneMap = new Map(value.stones.map((s) => [s.id, s]));
     const intentionMap = new Map(value.intentions.map((i) => [i.id, i]));

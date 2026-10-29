@@ -18,7 +18,22 @@ export default defineConfig({
   title: "Amritara Rituals",
   projectId,
   dataset,
-  schema: { types: schemaTypes },
+  schema: {
+    types: schemaTypes,
+    templates: (prev) => [
+      ...prev,
+      // "New product" inside a tab's list pre-fills that tab.
+      {
+        id: "rangeProduct-in-range",
+        title: "Shop product in tab",
+        schemaType: "rangeProduct",
+        parameters: [{ name: "rangeId", type: "string" }],
+        value: ({ rangeId }: { rangeId: string }) => ({
+          range: { _type: "reference", _ref: rangeId },
+        }),
+      },
+    ],
+  },
   plugins: [
     structureTool({
       // Pin "Settings" as a single fixed document (the delivery rule etc.),
@@ -40,18 +55,43 @@ export default defineConfig({
               S,
               context,
             }),
+            S.divider(),
+            // Collections tabs beyond Bracelets (Stone Décor, Pendants, …). A
+            // new tab is just a new "Collection tab" + products — no code.
             orderableDocumentListDeskItem({
-              type: "decorProduct",
-              title: "Stone Décor (ordered)",
+              type: "productRange",
+              title: "Collection tabs (ordered)",
               S,
               context,
             }),
+            // Browse/add products one tab at a time; new products created here
+            // are already assigned to that tab.
+            S.listItem()
+              .title("Shop products by tab")
+              .id("rangeProductsByTab")
+              .child(
+                S.documentTypeList("productRange")
+                  .title("Tabs")
+                  .child((rangeId) =>
+                    S.documentList()
+                      .title("Products")
+                      .schemaType("rangeProduct")
+                      .filter('_type == "rangeProduct" && range._ref == $rangeId')
+                      .params({ rangeId })
+                      .initialValueTemplates([
+                        S.initialValueTemplateItem("rangeProduct-in-range", { rangeId }),
+                      ]),
+                  ),
+              ),
+            // Display order: drag within a tab's products (the tab is shown
+            // under each name); other tabs' positions don't matter.
             orderableDocumentListDeskItem({
-              type: "pendantProduct",
-              title: "Pendants (ordered)",
+              type: "rangeProduct",
+              title: "Shop products (ordered)",
               S,
               context,
             }),
+            S.divider(),
             orderableDocumentListDeskItem({
               type: "faq",
               title: "FAQs (ordered)",
@@ -63,7 +103,7 @@ export default defineConfig({
             // settings (pinned above) or the orderable product lists above.
             ...S.documentTypeListItems().filter(
               (item) =>
-                !["settings", "product", "decorProduct", "pendantProduct", "faq"].includes(
+                !["settings", "product", "productRange", "rangeProduct", "faq"].includes(
                   item.getId() ?? "",
                 ),
             ),

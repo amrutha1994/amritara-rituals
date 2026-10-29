@@ -1,8 +1,7 @@
 import type { MetadataRoute } from "next";
 
-import { getAllProducts, getDecorProducts, getPendants } from "@/sanity/queries";
+import { getAllProducts, getRanges } from "@/sanity/queries";
 import { absoluteUrl } from "@/lib/site";
-import { DECOR_ENABLED, PENDANTS_ENABLED } from "@/lib/features";
 
 /**
  * The XML sitemap served at /sitemap.xml — every indexable storefront URL, so
@@ -44,42 +43,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  // Stone Décor URLs are only advertised once the feature is live. `getDecorProducts`
-  // already returns [] when the flag is off, but we also skip the /decor landing.
-  const decorRoutes: MetadataRoute.Sitemap = DECOR_ENABLED
-    ? [
-        {
-          url: absoluteUrl("/decor"),
-          lastModified: now,
-          changeFrequency: "weekly",
-          priority: 0.8,
-        },
-        ...(await getDecorProducts()).map((product) => ({
-          url: absoluteUrl(`/decor/${product.slug}`),
-          lastModified: now,
-          changeFrequency: "weekly" as const,
-          priority: 0.7,
-        })),
-      ]
-    : [];
+  // Every live Sanity range (Stone Décor, Pendants, …): its page and products.
+  // Ranges that are switched off aren't returned, so they're never advertised.
+  const rangeRoutes: MetadataRoute.Sitemap = (await getRanges()).flatMap((range) => [
+    {
+      url: absoluteUrl(`/shop/${range.slug}`),
+      lastModified: now,
+      changeFrequency: "weekly" as const,
+      priority: 0.8,
+    },
+    ...range.products.map((product) => ({
+      url: absoluteUrl(`/shop/${range.slug}/${product.slug}`),
+      lastModified: now,
+      changeFrequency: "weekly" as const,
+      priority: 0.7,
+    })),
+  ]);
 
-  // Pendants, likewise, only once that line is live.
-  const pendantRoutes: MetadataRoute.Sitemap = PENDANTS_ENABLED
-    ? [
-        {
-          url: absoluteUrl("/pendants"),
-          lastModified: now,
-          changeFrequency: "weekly",
-          priority: 0.8,
-        },
-        ...(await getPendants()).map((product) => ({
-          url: absoluteUrl(`/pendants/${product.slug}`),
-          lastModified: now,
-          changeFrequency: "weekly" as const,
-          priority: 0.7,
-        })),
-      ]
-    : [];
-
-  return [...staticRoutes, ...productRoutes, ...decorRoutes, ...pendantRoutes];
+  return [...staticRoutes, ...productRoutes, ...rangeRoutes];
 }
