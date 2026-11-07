@@ -1,4 +1,5 @@
 import type { IntentionId } from "@/data/intentions";
+import type { RangeRef } from "@/data/ranges";
 
 /** Bracelet size identifiers (wrist-circumference based). */
 export type BraceletSizeId = "S" | "M" | "L";
@@ -111,16 +112,25 @@ export interface Product {
    */
   intentions: IntentionId[];
   /**
-   * What kind of product this is. `undefined`/"bracelet" is the wearable
-   * bracelet (the default). "decor" is a Stone Décor object — it has no wrist
-   * size and links under /decor instead of /collections. Drives the few
-   * type-aware bits in shared components (card link, order flow).
+   * The Sanity-managed range (Collections tab) this piece belongs to — Stone
+   * Décor, Pendants, or any range added later. `undefined` for bracelets, the
+   * built-in range. A range product has no wrist size and lives under
+   * /shop/<range>/<slug> (see `productHref`).
    */
-  kind?: "bracelet" | "decor";
-  /** Décor only — physical size text, e.g. "Height 7 cm". */
+  range?: RangeRef;
+  /** Range products — physical size text, e.g. "Height 7 cm" or "Pendant 3 cm". */
   dimensions?: string;
-  /** Décor only — placement ids where the object is meant to live (car/wall/…). */
-  placement?: string[];
+}
+
+/** The product page URL for any kind of product. */
+export function productHref(product: Product): string {
+  if (product.range) return `/shop/${product.range.slug}/${product.slug}`;
+  return `/collections/${product.slug}`;
+}
+
+/** Whether a product is ordered without a wrist size (every range but bracelets). */
+export function isSizeless(product: Product): boolean {
+  return product.range !== undefined;
 }
 
 /**
@@ -176,7 +186,12 @@ function canonicalStone(stone: string): string {
  * surfaces under either stone.
  */
 export function stoneNames(product: Product): string[] {
-  return (product.stone ?? "")
+  return splitStones(product.stone ?? "");
+}
+
+/** Split a `stone` string into its individual (canonical) stones. */
+function splitStones(stone: string): string[] {
+  return stone
     .split(STONE_SEPARATORS)
     // A trailing full stop ends one of the décor lists; nothing else relies on
     // punctuation, so it's trimmed along with the surrounding space.
@@ -192,6 +207,74 @@ export function stoneNames(product: Product): string[] {
 export function hasStone(product: Product, stone: string): boolean {
   const wanted = stone.trim().toLowerCase();
   return stoneNames(product).some((s) => s.toLowerCase() === wanted);
+}
+
+/**
+ * Varieties that should pair with the plain stone when matching pendants to
+ * bracelets and Stone Finder stones — an "Amethyst" pendant belongs with an
+ * "African Amethyst" bracelet. Kept separate from `STONE_ALIASES` so pairing
+ * never changes the collection's stone filter, and explicit for the same reason:
+ * "Red Tiger Eye" is not "Tiger Eye", and no general rule can tell the cases
+ * apart. Add a line here when a new variety should pair with its plain stone.
+ */
+const PAIRING_ALIASES: Record<string, string> = {
+  "african amethyst": "amethyst",
+};
+
+function pairingKey(stone: string): string {
+  const s = canonicalStone(stone).trim().toLowerCase();
+  return PAIRING_ALIASES[s] ?? s;
+}
+
+/**
+ * Whether a stone description (a product's `stone` string, or a single stone
+ * name) shares a stone with `stone` — e.g. the "Green Aventurine" pendant pairs
+ * with the "Citrine · Green Aventurine" bracelet. Each stone is compared whole,
+ * like `hasStone`, so "Blue Aventurine" never pairs with "Green Aventurine".
+ */
+export function sharesStone(description: string, stone: string): boolean {
+  const wanted = pairingKey(stone);
+  if (!wanted) return false;
+  return splitStones(description).some(
+    (s) => pairingKey(s) === wanted,
+  );
+}
+
+/**
+ * Pieces from another line that share a stone with `product` — the matching
+ * pendant for a bracelet, or the matching bracelets for a pendant. Hidden and
+ * sold-out items are left out, since this is a "buy it too" suggestion.
+ */
+export function pairedPieces(
+  product: Product,
+  candidates: Product[],
+  limit = 3,
+): Product[] {
+  const stones = stoneNames(product);
+  return candidates
+    .filter(
+      (c) =>
+        c.show &&
+        !isSoldOut(c) &&
+        stones.some((stone) => sharesStone(c.stone, stone)),
+    )
+    .slice(0, limit);
+}
+
+/**
+ * Pieces that carry an intention, strongest match first — an item lists its
+ * intentions in order of importance, so one that leads with it ranks ahead of
+ * one that mentions it last. Hidden and sold-out items are left out.
+ */
+export function piecesForIntention(
+  intention: string,
+  candidates: Product[],
+  limit = 3,
+): Product[] {
+  return candidates
+    .filter((c) => c.show && !isSoldOut(c) && c.intentions.includes(intention))
+    .sort((a, b) => a.intentions.indexOf(intention) - b.intentions.indexOf(intention))
+    .slice(0, limit);
 }
 
 /** Stock state derived from a product's optional `remainingQuantity`. */
@@ -273,6 +356,18 @@ export interface Coupon {
   code: string;
   percent: number;
 }
+
+/**
+ * Optional gift wrap, ticked in the bag: `price` is added once per order. Set in
+ * the Sanity `settings` singleton.
+ */
+export interface GiftWrap {
+  enabled: boolean;
+  price: number;
+}
+
+/** Fallback until the `settings` document has gift-wrap values: offered at ₹15. */
+export const DEFAULT_GIFT_WRAP: GiftWrap = { enabled: true, price: 15 };
 
 /** Fallback until the `settings` document has a coupon: no coupon. */
 export const DEFAULT_COUPON: Coupon = { enabled: false, code: "", percent: 10 };

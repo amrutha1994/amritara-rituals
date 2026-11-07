@@ -25,6 +25,7 @@ import { track } from "@/lib/analytics";
 import { useCatalog } from "@/components/catalog-provider";
 import { useSelection } from "@/components/selection-provider";
 import CouponField, { useAppliedCoupon } from "@/components/coupon-field";
+import GiftWrapOption, { useGiftOption } from "@/components/gift-wrap-option";
 import { useToast } from "@/components/toast-provider";
 import SizeChart from "@/components/size-chart";
 
@@ -78,6 +79,7 @@ export default function BraceletCustomiser({
   const { show } = useToast();
   // Custom bracelets are always eligible, so the applied coupon covers them.
   const coupon = useAppliedCoupon();
+  const gift = useGiftOption();
 
   const availableStones = useMemo(
     () => (beadSize ? stonesBySize(stones, beadSize) : []),
@@ -175,7 +177,7 @@ export default function BraceletCustomiser({
       qty,
       value: unitPrice * qty,
     });
-    window.open(buildCustomOrderLink(line, delivery, coupon), "_blank", "noopener,noreferrer");
+    window.open(buildCustomOrderLink(line, delivery, coupon, gift), "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -462,6 +464,8 @@ export default function BraceletCustomiser({
 
           {/* Actions */}
           <div className="mt-5 flex flex-col gap-3">
+            {/* One choice per visit — also ticked in the bag. */}
+            <GiftWrapOption />
             <button
               type="button"
               onClick={handleOrder}

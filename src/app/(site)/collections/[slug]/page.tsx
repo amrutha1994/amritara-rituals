@@ -3,13 +3,16 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import {
   getAllProducts,
+  getRanges,
   getProductBySlug,
 } from "@/sanity/queries";
+import CompleteTheRitual from "@/components/complete-the-ritual";
 import ProductOrderPanel from "@/components/product-order-panel";
 import DetailPrice from "@/components/detail-price";
 import ProductGallery from "@/components/product-gallery";
 import {
   displayName,
+  pairedPieces,
   isNewArrival,
   stockStatus,
   type Product,
@@ -81,8 +84,12 @@ export default async function ProductPage({
   params,
 }: PageProps<"/collections/[slug]">) {
   const { slug } = await params;
-  const product = await getProductBySlug(slug);
+  const [product, ranges] = await Promise.all([
+    getProductBySlug(slug),
+    getRanges(),
+  ]);
   if (!product) notFound();
+  const pairingRanges = ranges.filter((r) => r.pairWithBracelets);
 
   return (
     <main className="flex flex-1 flex-col">
@@ -125,7 +132,7 @@ export default async function ProductPage({
               </p>
               <DetailPrice product={product} showDelivery />
 
-              <p className="mt-6 text-base leading-8 text-muted">
+              <p className="mt-6 text-base leading-8 text-muted whitespace-pre-line">
                 {product.description}
               </p>
 
@@ -151,6 +158,17 @@ export default async function ProductPage({
               )}
 
               <ProductOrderPanel product={product} />
+
+              {/* The same-stone piece from each tab set to pair with bracelets
+                  in the Studio (e.g. the matching pendant), in one box. */}
+              <CompleteTheRitual
+                items={pairingRanges.flatMap((r) => pairedPieces(product, r.products, 1))}
+                copy={
+                  pairingRanges.length === 1 && pairingRanges[0].pairingLine
+                    ? pairingRanges[0].pairingLine
+                    : "Wear the same stone in another form."
+                }
+              />
             </div>
           </div>
         </div>

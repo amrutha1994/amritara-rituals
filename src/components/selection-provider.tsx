@@ -72,6 +72,16 @@ interface SelectionContextValue {
   couponCode: string | null;
   applyCoupon: (code: string) => void;
   removeCoupon: () => void;
+  /**
+   * Whether the shopper ticked "Add gift wrap" (one charge per order). One choice
+   * per visit, like the coupon: ticked on a product page, it's ticked in the bag
+   * too, and applies to whichever order they send.
+   */
+  giftWrap: boolean;
+  setGiftWrap: (on: boolean) => void;
+  /** Optional note for the gift card, sent with the order when gift wrap is on. */
+  giftMessage: string;
+  setGiftMessage: (message: string) => void;
   /** Quantity of a specific product + size. */
   qtyOf: (productId: string, size: LineSize) => number;
   /** Total quantity across all sizes of a product. */
@@ -96,6 +106,8 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<SelectionItem[]>([]);
   const [customItems, setCustomItems] = useState<CustomItem[]>([]);
   const [couponCode, setCouponCode] = useState<string | null>(null);
+  const [giftWrap, setGiftWrap] = useState(false);
+  const [giftMessage, setGiftMessage] = useState("");
   const applyCoupon = useCallback((code: string) => setCouponCode(code), []);
   const removeCoupon = useCallback(() => setCouponCode(null), []);
 
@@ -218,6 +230,10 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
       couponCode,
       applyCoupon,
       removeCoupon,
+      giftWrap,
+      setGiftWrap,
+      giftMessage,
+      setGiftMessage,
       qtyOf,
       productQty,
       count,
@@ -237,6 +253,8 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
       couponCode,
       applyCoupon,
       removeCoupon,
+      giftWrap,
+      giftMessage,
       qtyOf,
       productQty,
       count,

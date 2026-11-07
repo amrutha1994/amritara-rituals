@@ -1,7 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import CollectionsSection from "@/components/collections-section";
+import RangeSpotlights from "@/components/range-spotlight";
 import ContactSection from "@/components/contact-section";
+import FaqSection from "@/components/faq-section";
 import { BEAD_SIZES } from "@/data/stones";
 
 export default function Home() {
@@ -87,7 +89,10 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Product collection — bracelets + Stone Décor as tabs */}
+      {/* Spotlight strips for ranges with "Show homepage spotlight" on in Sanity */}
+      <RangeSpotlights />
+
+      {/* Product collection — Bracelets plus every live Sanity range, as tabs */}
       <CollectionsSection />
 
       {/* Bead size guide */}
@@ -211,6 +216,9 @@ export default function Home() {
 
       {/* Antique-gold divider between sections */}
       <div className="gold-rule" />
+
+      {/* FAQs — all of them, right before the shopper decides to message */}
+      <FaqSection />
 
       {/* Contact */}
       <ContactSection />

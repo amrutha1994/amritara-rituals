@@ -7,17 +7,21 @@ import { type Product } from "@/data/products";
 import ProductCard from "@/components/product-card";
 
 /**
- * Browse UI for the Stone Décor line. One flat section — every piece is shown
- * together, with an optional filter by shared Intentions so the same "shop by
- * intention" language spans both lines. Reuses ProductCard, which already links
- * décor items under /decor.
+ * Browse UI for a Collections tab beyond Bracelets — Stone Décor, Pendants or
+ * any Sanity-managed range. Flat and sizeless: every piece is
+ * shown together, with an optional filter by shared Intentions so the same
+ * "shop by intention" language spans every line. Reuses ProductCard, which
+ * links each item to its own route.
  */
-export default function DecorBrowser({
+export default function RangeBrowser({
   products,
   intentions,
+  emptyCopy = "New pieces are being crafted — check back shortly.",
 }: {
   products: Product[];
   intentions: Intention[];
+  /** Shown when the line has no items yet. */
+  emptyCopy?: string;
 }) {
   const [selectedIntentions, setSelectedIntentions] = useState<string[]>([]);
 
@@ -91,7 +95,7 @@ export default function DecorBrowser({
           <p className="mt-2 text-sm text-muted">
             {hasFilters
               ? "Try fewer filters, or clear them to see everything."
-              : "Our stone décor collection is being crafted — check back shortly."}
+              : emptyCopy}
           </p>
         </div>
       )}

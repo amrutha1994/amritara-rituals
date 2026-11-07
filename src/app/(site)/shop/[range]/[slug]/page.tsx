@@ -2,34 +2,47 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
-import { getDecorProducts, getDecorBySlug } from "@/sanity/queries";
-import DecorOrderPanel from "@/components/decor-order-panel";
+import { getAllProducts, getRange, getRanges } from "@/sanity/queries";
+import CompleteTheRitual from "@/components/complete-the-ritual";
+import RangeOrderPanel from "@/components/range-order-panel";
 import DetailPrice from "@/components/detail-price";
 import ProductGallery from "@/components/product-gallery";
 import {
   isNewArrival,
+  pairedPieces,
+  productHref,
   stockStatus,
   type Product,
 } from "@/data/products";
-import { DECOR_ENABLED } from "@/lib/features";
 import { SITE_NAME, absoluteUrl } from "@/lib/site";
 
-// Pre-render a page per décor item — but only when the feature is on, so no
-// hidden URLs are generated while it's off.
+/**
+ * Product page for any Sanity-managed range (Stone Décor, Pendants, …):
+ * /shop/<range>/<product>. A range that isn't switched on 404s.
+ */
+async function load(rangeSlug: string, slug: string) {
+  const range = await getRange(rangeSlug);
+  const product = range?.products.find((p) => p.slug === slug);
+  return range && product ? { range, product } : undefined;
+}
+
+// Pre-render a page per product in every live range.
 export async function generateStaticParams() {
-  if (!DECOR_ENABLED) return [];
-  const products = await getDecorProducts();
-  return products.map((product) => ({ slug: product.slug }));
+  const ranges = await getRanges();
+  return ranges.flatMap((r) =>
+    r.products.map((p) => ({ range: r.slug, slug: p.slug })),
+  );
 }
 
 export async function generateMetadata({
   params,
-}: PageProps<"/decor/[slug]">): Promise<Metadata> {
-  const { slug } = await params;
-  const product = DECOR_ENABLED ? await getDecorBySlug(slug) : undefined;
-  if (!product) return { title: "Not found" };
+}: PageProps<"/shop/[range]/[slug]">): Promise<Metadata> {
+  const { range: rangeSlug, slug } = await params;
+  const found = await load(rangeSlug, slug);
+  if (!found) return { title: "Not found" };
+  const { product } = found;
   const description = product.description || product.shortIntention;
-  const url = `/decor/${slug}`;
+  const url = productHref(product);
   return {
     title: product.name,
     description,
@@ -45,8 +58,8 @@ export async function generateMetadata({
   };
 }
 
-/** Schema.org Product structured data (price + availability) for a décor item. */
-function decorJsonLd(product: Product, slug: string) {
+/** Schema.org Product structured data (price + availability) for a range product. */
+function productJsonLd(product: Product, category: string) {
   const availability =
     stockStatus(product) === "sold_out"
       ? "https://schema.org/OutOfStock"
@@ -57,7 +70,7 @@ function decorJsonLd(product: Product, slug: string) {
     name: product.name,
     description: product.description || product.shortIntention,
     sku: product.id,
-    category: "For your space",
+    category,
     image: product.images.map((u) => (u.startsWith("http") ? u : absoluteUrl(u))),
     brand: { "@type": "Brand", name: SITE_NAME },
     offers: {
@@ -65,34 +78,37 @@ function decorJsonLd(product: Product, slug: string) {
       price: product.price,
       priceCurrency: "INR",
       availability,
-      url: absoluteUrl(`/decor/${slug}`),
+      url: absoluteUrl(productHref(product)),
     },
   };
 }
 
-export default async function DecorDetailPage({
+export default async function RangeProductPage({
   params,
-}: PageProps<"/decor/[slug]">) {
-  if (!DECOR_ENABLED) notFound();
-  const { slug } = await params;
-  const product = await getDecorBySlug(slug);
-  if (!product) notFound();
+}: PageProps<"/shop/[range]/[slug]">) {
+  const { range: rangeSlug, slug } = await params;
+  const [found, bracelets] = await Promise.all([
+    load(rangeSlug, slug),
+    getAllProducts(),
+  ]);
+  if (!found) notFound();
+  const { range, product } = found;
 
   return (
     <main className="flex flex-1 flex-col">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(decorJsonLd(product, slug)),
+          __html: JSON.stringify(productJsonLd(product, range.title)),
         }}
       />
       <section className="px-6 py-10 sm:py-14">
         <div className="mx-auto max-w-6xl">
           <Link
-            href="/decor"
+            href={`/#${range.slug}`}
             className="inline-flex items-center gap-1.5 text-sm font-medium text-muted transition-colors hover:text-primary"
           >
-            <span aria-hidden>←</span> Back to For your space
+            <span aria-hidden>←</span> Back to {range.title}
           </Link>
 
           <div className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-2 lg:gap-16">
@@ -101,7 +117,7 @@ export default async function DecorDetailPage({
             <div className="flex flex-col">
               <div className="flex flex-wrap items-center gap-3">
                 <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gold-antique">
-                  For your space
+                  {range.title}
                   {product.stone ? ` · ${product.stone}` : ""}
                 </p>
                 {isNewArrival(product) && (
@@ -121,12 +137,17 @@ export default async function DecorDetailPage({
 
               <DetailPrice product={product} />
 
-              {product.dimensions && (
-                <p className="mt-2 text-sm text-muted">Size: {product.dimensions}</p>
+              {/* The tab's shared note (e.g. thread details) and this piece's size. */}
+              {(range.productNote || product.dimensions) && (
+                <p className="mt-2 text-sm text-muted">
+                  {[range.productNote, product.dimensions && `Size: ${product.dimensions}`]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </p>
               )}
 
               {product.description && (
-                <p className="mt-6 text-base leading-8 text-muted">
+                <p className="mt-6 text-base leading-8 text-muted whitespace-pre-line">
                   {product.description}
                 </p>
               )}
@@ -152,7 +173,15 @@ export default async function DecorDetailPage({
                 </div>
               )}
 
-              <DecorOrderPanel product={product} />
+              <RangeOrderPanel product={product} />
+
+              {/* Bracelets in the same stone, when this tab pairs with them. */}
+              {range.pairWithBracelets && (
+                <CompleteTheRitual
+                  items={pairedPieces(product, bracelets)}
+                  copy="Pair it with a bracelet in the same stone."
+                />
+              )}
             </div>
           </div>
         </div>
